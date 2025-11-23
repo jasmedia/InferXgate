@@ -32,6 +32,7 @@ pub struct AppConfig {
     pub google_client_id: Option<String>,
     pub google_client_secret: Option<String>,
     pub oauth_redirect_url: String,
+    pub frontend_url: String,
 
     // Security configuration
     pub allowed_email_domains: Option<Vec<String>>,
@@ -102,6 +103,8 @@ impl AppConfig {
             google_client_secret: env::var("GOOGLE_CLIENT_SECRET").ok(),
             oauth_redirect_url: env::var("OAUTH_REDIRECT_URL")
                 .unwrap_or_else(|_| "http://localhost:3000/auth/oauth/callback".to_string()),
+            frontend_url: env::var("FRONTEND_URL")
+                .unwrap_or_else(|_| "http://localhost:5173".to_string()),
 
             // Security configuration
             allowed_email_domains,
