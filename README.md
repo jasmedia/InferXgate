@@ -298,6 +298,16 @@ model_routes.insert(
 
 ### Using Docker Compose
 
+1. Set up environment variables:
+```bash
+# Copy the example env file
+cp .env.example .env
+
+# Edit .env with your API keys
+# At minimum, set one LLM provider API key (e.g., ANTHROPIC_API_KEY)
+```
+
+2. Start all services:
 ```bash
 docker-compose up -d
 ```

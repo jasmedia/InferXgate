@@ -376,8 +376,8 @@ pub async fn oauth_callback(
     let user_data_encoded = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(&user_data);
 
     let redirect_url = format!(
-        "http://localhost:5173/auth/oauth/callback?token={}&user={}",
-        token, user_data_encoded
+        "{}/auth/oauth/callback?token={}&user={}",
+        state.config.frontend_url, token, user_data_encoded
     );
 
     Ok(Redirect::to(&redirect_url))
