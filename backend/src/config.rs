@@ -84,7 +84,7 @@ impl AppConfig {
                 .unwrap_or(3600),
 
             // Authentication configuration
-            master_key: env::var("LITELLM_MASTER_KEY").ok(),
+            master_key: env::var("INFERXGATE_MASTER_KEY").ok(),
             jwt_secret,
             jwt_expiry_hours: env::var("JWT_EXPIRY_HOURS")
                 .unwrap_or_else(|_| "168".to_string()) // 7 days default
