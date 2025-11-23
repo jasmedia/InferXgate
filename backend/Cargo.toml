@@ -1,0 +1,76 @@
+[package]
+name = "llm-gateway"
+version = "0.1.0"
+edition = "2021"
+license = "AGPL-3.0"
+default-run = "llm-gateway"
+
+[dependencies]
+# Web framework
+axum = "0.7"
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async trait
+async-trait = "0.1"
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Error handling
+thiserror = "1.0"
+anyhow = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Configuration
+config = "0.14"
+dotenv = "0.15"
+
+# Utils
+uuid = { version = "1.6", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+base64 = "0.22"
+futures = "0.3"
+async-stream = "0.3"
+bytes = "1.5"
+
+# Streaming
+eventsource-stream = "0.2"
+tokio-stream = "0.1"
+
+# Redis for caching
+redis = { version = "0.32", features = ["tokio-comp", "connection-manager"] }
+
+# PostgreSQL for usage tracking
+sqlx = { version = "0.8", features = ["runtime-tokio-native-tls", "postgres", "chrono", "uuid"] }
+
+# Prometheus metrics
+prometheus = "0.13"
+lazy_static = "1.4"
+
+# Random number generation for load balancing
+rand = "0.8"
+
+# Authentication and authorization
+jsonwebtoken = "9"
+bcrypt = "0.15"
+oauth2 = "4.4"
+url = "2.5"
+serde_urlencoded = "0.7"
+
+# Cryptographic hashing
+sha2 = "0.10"
+hex = "0.4"
+
+# Lock-free concurrent data structures
+dashmap = "6.0"

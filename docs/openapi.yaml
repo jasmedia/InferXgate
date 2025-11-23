@@ -1,0 +1,307 @@
+openapi: 3.0.0
+info:
+  title: LLM Gateway API
+  description: Unified OpenAI-compatible API for multiple LLM providers
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@llmgateway.dev
+
+servers:
+  - url: http://localhost:3000/v1
+    description: Local development server
+  - url: https://api.llmgateway.dev/v1
+    description: Production server
+
+paths:
+  /chat/completions:
+    post:
+      summary: Create chat completion
+      description: Creates a chat completion for the provided messages
+      operationId: createChatCompletion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatCompletionRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatCompletionResponse'
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-sent events stream for streaming responses
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /models:
+    get:
+      summary: List available models
+      description: Returns a list of all available models
+      operationId: listModels
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelList'
+
+  /health:
+    get:
+      summary: Health check
+      description: Check if the service is healthy
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  schemas:
+    ChatCompletionRequest:
+      type: object
+      required:
+        - model
+        - messages
+      properties:
+        model:
+          type: string
+          description: ID of the model to use
+          example: claude-3-opus-20240229
+        messages:
+          type: array
+          description: List of messages for the conversation
+          items:
+            $ref: '#/components/schemas/Message'
+        temperature:
+          type: number
+          description: Sampling temperature between 0 and 2
+          minimum: 0
+          maximum: 2
+          default: 1
+          example: 0.7
+        max_tokens:
+          type: integer
+          description: Maximum tokens to generate
+          example: 1000
+        top_p:
+          type: number
+          description: Nucleus sampling parameter
+          minimum: 0
+          maximum: 1
+          default: 1
+          example: 0.9
+        frequency_penalty:
+          type: number
+          description: Frequency penalty
+          minimum: -2
+          maximum: 2
+          default: 0
+        presence_penalty:
+          type: number
+          description: Presence penalty
+          minimum: -2
+          maximum: 2
+          default: 0
+        stop:
+          type: array
+          description: Stop sequences
+          items:
+            type: string
+        stream:
+          type: boolean
+          description: Whether to stream the response
+          default: false
+        n:
+          type: integer
+          description: Number of completions to generate
+          default: 1
+          minimum: 1
+        user:
+          type: string
+          description: Unique identifier for the user
+
+    Message:
+      type: object
+      required:
+        - role
+        - content
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+          description: Role of the message author
+        content:
+          oneOf:
+            - type: string
+              description: Text content
+            - type: array
+              description: Multi-modal content
+              items:
+                $ref: '#/components/schemas/ContentPart'
+        name:
+          type: string
+          description: Optional name for the participant
+
+    ContentPart:
+      oneOf:
+        - type: object
+          required:
+            - type
+            - text
+          properties:
+            type:
+              type: string
+              enum: [text]
+            text:
+              type: string
+        - type: object
+          required:
+            - type
+            - image_url
+          properties:
+            type:
+              type: string
+              enum: [image_url]
+            image_url:
+              type: object
+              required:
+                - url
+              properties:
+                url:
+                  type: string
+                  description: URL or base64 encoded image
+                detail:
+                  type: string
+                  enum: [auto, low, high]
+                  default: auto
+
+    ChatCompletionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the completion
+        object:
+          type: string
+          enum: [chat.completion]
+        created:
+          type: integer
+          description: Unix timestamp
+        model:
+          type: string
+          description: Model used for the completion
+        choices:
+          type: array
+          items:
+            $ref: '#/components/schemas/Choice'
+        usage:
+          $ref: '#/components/schemas/Usage'
+
+    Choice:
+      type: object
+      properties:
+        index:
+          type: integer
+        message:
+          $ref: '#/components/schemas/Message'
+        finish_reason:
+          type: string
+          enum: [stop, length, content_filter, null]
+
+    Usage:
+      type: object
+      properties:
+        prompt_tokens:
+          type: integer
+        completion_tokens:
+          type: integer
+        total_tokens:
+          type: integer
+
+    ModelList:
+      type: object
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Model'
+
+    Model:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Model identifier
+        object:
+          type: string
+          enum: [model]
+        owned_by:
+          type: string
+          description: Organization that owns the model
+        permission:
+          type: array
+          items:
+            type: object
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+            type:
+              type: string
+            code:
+              type: integer
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+security:
+  - BearerAuth: []

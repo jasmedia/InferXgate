@@ -1,0 +1,99 @@
+# Rust/Backend
+backend/target/
+target/
+backend/.env
+backend/*.log
+
+# Note: Cargo.lock is intentionally NOT ignored for binary projects
+# It ensures reproducible builds and should be committed
+
+# Frontend/Node
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/build
+frontend/dist
+frontend/.DS_Store
+frontend/*.local
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/.pnpm-debug.log*
+
+# Logs
+*.log
+logs/
+*.out
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Build artifacts
+build/
+dist/
+out/
+
+# Lock files (keep for reproducibility, but you can uncomment if needed)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# macOS
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.internal/
+.claude/
