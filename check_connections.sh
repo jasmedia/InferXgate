@@ -34,7 +34,7 @@ export $(cat .env | grep -v '^#' | xargs)
 
 # Default values
 REDIS_URL=${REDIS_URL:-redis://localhost:6379}
-DATABASE_URL=${DATABASE_URL:-postgresql://llmgateway:llmgateway@localhost:5432/llm_gateway}
+DATABASE_URL=${DATABASE_URL:-postgresql://inferxgate:inferxgate@localhost:5432/inferxgate}
 
 # Extract connection details
 REDIS_HOST=$(echo $REDIS_URL | sed -n 's/.*:\/\/\([^:]*\).*/\1/p')
@@ -99,10 +99,10 @@ else
         echo "   docker run -d -p 6379:6379 --name llm-gateway-redis redis:7-alpine"
     fi
     if [ $PG_OK -eq 0 ]; then
-        echo "   docker run -d -p 5432:5432 --name llm-gateway-postgres \\"
-        echo "     -e POSTGRES_USER=llmgateway \\"
-        echo "     -e POSTGRES_PASSWORD=llmgateway \\"
-        echo "     -e POSTGRES_DB=llm_gateway \\"
+        echo "   docker run -d -p 5432:5432 --name inferxgate-postgres \\"
+        echo "     -e POSTGRES_USER=inferxgate \\"
+        echo "     -e POSTGRES_PASSWORD=inferxgate \\"
+        echo "     -e POSTGRES_DB=inferxgate \\"
         echo "     postgres:18-alpine"
     fi
     echo ""

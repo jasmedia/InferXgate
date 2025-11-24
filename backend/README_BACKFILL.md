@@ -109,7 +109,7 @@ curl -X DELETE http://localhost:3000/auth/key/old-key-uuid \
 echo $DATABASE_URL
 
 # Or set it explicitly
-DATABASE_URL=postgresql://user:pass@localhost/llm_gateway cargo run --bin backfill_key_hashes
+DATABASE_URL=postgresql://user:pass@localhost/inferxgate cargo run --bin backfill_key_hashes
 ```
 
 ### Can't Delete Old Keys

@@ -104,7 +104,7 @@ echo ""
 # Test 7: Database Query
 echo -e "${BLUE}7. Testing Database (Recent Requests)...${NC}"
 if command -v psql &> /dev/null; then
-    psql llm_gateway -c "
+    psql inferxgate -c "
     SELECT
         model,
         provider,
@@ -135,5 +135,5 @@ echo ""
 echo "Try these commands:"
 echo "  curl $BASE_URL/stats | jq"
 echo "  curl $BASE_URL/metrics"
-echo "  psql llm_gateway -c 'SELECT * FROM usage_records LIMIT 5;'"
+echo "  psql inferxgate -c 'SELECT * FROM usage_records LIMIT 5;'"
 echo ""
