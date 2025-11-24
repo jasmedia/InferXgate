@@ -88,6 +88,7 @@ services:
       - POSTGRES_USER=${POSTGRES_USER:-llmgateway}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-llmgateway}
       - POSTGRES_DB=${POSTGRES_DB:-llm_gateway}
+      - PGDATA=/var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
