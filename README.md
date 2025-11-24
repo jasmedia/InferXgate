@@ -2,6 +2,8 @@
 
 A high-performance LLM Gateway built in Rust with a React dashboard that provides a unified OpenAI-compatible API interface for multiple LLM providers.
 
+![InferXgate Dashboard](docs/images/dashboard.png)
+
 ## Features
 
 ### Currently Supported Providers
@@ -134,7 +136,7 @@ AWS_SECRET_ACCESS_KEY=your-aws-secret-key
 AWS_REGION=us-east-1
 
 # Optional: Database for metadata
-DATABASE_URL=postgresql://user:password@localhost/llm_gateway
+DATABASE_URL=postgresql://user:password@localhost/inferxgate
 
 # Optional: Redis for caching
 REDIS_URL=redis://localhost:6379
@@ -484,9 +486,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For issues and questions:
-- Open an issue on [GitHub](https://github.com/yourusername/llm-gateway/issues)
-- Check the [FAQ](docs/FAQ.md)
-- Join our [Discord](https://discord.gg/yourserver)
+- Email: support@inferxgate.com
+- Open an issue on [GitHub](https://github.com/jasmedia/InferXgate/issues)
 
 ---
 

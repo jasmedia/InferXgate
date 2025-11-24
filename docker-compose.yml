@@ -80,10 +80,9 @@ services:
     # set shared memory limit when using docker compose
     shm_size: 128mb
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-llmgateway}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-llmgateway}
-      - POSTGRES_DB=${POSTGRES_DB:-llm_gateway}
-      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_USER=${POSTGRES_USER:-inferxgate}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-inferxgate}
+      - POSTGRES_DB=${POSTGRES_DB:-inferxgate}
     ports:
       - "5432:5432"
     volumes:
@@ -92,7 +91,7 @@ services:
       - llm-gateway-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-llmgateway}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inferxgate}"]
       interval: 30s
       timeout: 10s
       retries: 3
