@@ -290,41 +290,6 @@ llm-gateway/
 └── docker-compose.yml
 ```
 
-### Adding a New Provider
-
-1. Create a new file in `backend/src/providers/`:
-```rust
-// backend/src/providers/openai.rs
-use async_trait::async_trait;
-use crate::providers::LLMProvider;
-
-pub struct OpenAIProvider {
-    client: reqwest::Client,
-}
-
-#[async_trait]
-impl LLMProvider for OpenAIProvider {
-    // Implement required methods
-}
-```
-
-2. Register the provider in `main.rs`:
-```rust
-providers.insert("openai".to_string(), Box::new(OpenAIProvider::new()));
-```
-
-3. Add model mappings:
-```rust
-model_routes.insert(
-    "gpt-4".to_string(),
-    ModelRoute {
-        provider: "openai".to_string(),
-        target_model: "gpt-4".to_string(),
-        api_key: api_key.clone(),
-    },
-);
-```
-
 ## Docker Deployment
 
 ### Production Deployment (Recommended)
@@ -475,11 +440,10 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Inspired by [LiteLLM](https://github.com/BerriAI/litellm)
 - Built with [Axum](https://github.com/tokio-rs/axum) web framework
 - UI components from [Tailwind CSS](https://tailwindcss.com)
 
