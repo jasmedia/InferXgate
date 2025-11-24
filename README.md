@@ -31,17 +31,46 @@ A high-performance LLM Gateway built in Rust with a React dashboard that provide
 
 ## Quick Start
 
-### Prerequisites
+### Quick Production Setup (Recommended)
+
+The fastest way to get started using pre-built Docker images:
+
+```bash
+# Clone the repository
+git clone https://github.com/jasmedia/InferXgate.git
+cd InferXgate
+
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys (at minimum, set one LLM provider key)
+
+# Run the quickstart script and select option 4
+./quickstart.sh
+# Choose: 4) Run with Docker (production - uses pre-built images)
+```
+
+Or manually:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+Services will be available at:
+- Frontend: http://localhost
+- Backend API: http://localhost:3000
+
+### Development Setup
+
+For development, you'll need:
 - Rust 1.75+ (install from [rustup.rs](https://rustup.rs))
 - Bun 1.0+ (install from [bun.sh](https://bun.sh))
 - API keys for providers you want to use
 
-### Backend Setup
+### Backend Setup (Development)
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/llm-gateway.git
-cd llm-gateway
+git clone https://github.com/jasmedia/InferXgate.git
+cd InferXgate
 ```
 
 2. Set up environment variables:
@@ -296,19 +325,35 @@ model_routes.insert(
 
 ## Docker Deployment
 
-### Using Docker Compose
+### Production Deployment (Recommended)
 
-1. Set up environment variables:
+Use pre-built images from Docker Hub:
+
+```bash
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your API keys and secrets
+
+# Start with production compose file
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+This uses:
+- `inferxgate/backend:latest`
+- `inferxgate/frontend:latest`
+
+### Development with Docker Compose
+
+Build images locally:
+
 ```bash
 # Copy the example env file
 cp .env.example .env
 
 # Edit .env with your API keys
 # At minimum, set one LLM provider API key (e.g., ANTHROPIC_API_KEY)
-```
 
-2. Start all services:
-```bash
+# Start all services
 docker-compose up -d
 ```
 
@@ -325,7 +370,7 @@ Frontend:
 ```bash
 cd frontend
 docker build -t llm-gateway-frontend .
-docker run -p 5173:5173 llm-gateway-frontend
+docker run -p 80:80 llm-gateway-frontend
 ```
 
 ## Available Make Commands

@@ -1,9 +1,7 @@
 services:
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: llm-gateway-backend
+    image: inferxgate/backend:latest
+    container_name: inferxgate-backend
     ports:
       - "3000:3000"
     environment:
@@ -13,15 +11,18 @@ services:
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - DATABASE_URL=${DATABASE_URL}
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - OAUTH_REDIRECT_URL=${OAUTH_REDIRECT_URL:-http://localhost:3000/auth/oauth/callback}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - OAUTH_REDIRECT_URL=${OAUTH_REDIRECT_URL}
+      - FRONTEND_URL=${FRONTEND_URL}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
@@ -31,16 +32,14 @@ services:
       start_period: 40s
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: llm-gateway-frontend
+    image: inferxgate/frontend:latest
+    container_name: inferxgate-frontend
     ports:
       - "80:80"
     depends_on:
       - backend
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     restart: unless-stopped
     healthcheck:
       test:
@@ -59,13 +58,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: llm-gateway-redis
-    ports:
-      - "6379:6379"
+    container_name: inferxgate-redis
     volumes:
       - redis-data:/data
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     restart: unless-stopped
     command: redis-server --appendonly yes
     healthcheck:
@@ -76,27 +73,25 @@ services:
 
   postgres:
     image: postgres:18-alpine
-    container_name: llm-gateway-postgres
+    container_name: inferxgate-postgres
     environment:
-      - POSTGRES_USER=${POSTGRES_USER:-llmgateway}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-llmgateway}
-      - POSTGRES_DB=${POSTGRES_DB:-llm_gateway}
+      - POSTGRES_USER=${POSTGRES_USER:-inferxgate}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-inferxgate}
       - PGDATA=/var/lib/postgresql/data/pgdata
-    ports:
-      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-llmgateway}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inferxgate}"]
       interval: 30s
       timeout: 10s
       retries: 3
 
 networks:
-  llm-gateway-network:
+  inferxgate-network:
     driver: bridge
 
 volumes:

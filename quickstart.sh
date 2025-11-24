@@ -63,10 +63,11 @@ echo -e "${GREEN}✅ Dependencies installed${NC}"
 echo -e "\n${GREEN}Setup complete! What would you like to do?${NC}"
 echo "1) Start development servers (recommended for development)"
 echo "2) Build for production"
-echo "3) Run with Docker"
-echo "4) Exit"
+echo "3) Run with Docker (development)"
+echo "4) Run with Docker (production - uses pre-built images)"
+echo "5) Exit"
 
-read -p "Enter your choice (1-4): " choice
+read -p "Enter your choice (1-5): " choice
 
 case $choice in
     1)
@@ -108,7 +109,7 @@ case $choice in
             exit 1
         fi
 
-        echo -e "\n${GREEN}Starting with Docker...${NC}"
+        echo -e "\n${GREEN}Starting with Docker (development)...${NC}"
         docker-compose up -d
 
         echo -e "${GREEN}✅ Services started!${NC}"
@@ -118,6 +119,22 @@ case $choice in
         ;;
 
     4)
+        if ! command_exists docker; then
+            echo -e "${RED}❌ Docker is not installed${NC}"
+            echo "Please install Docker from https://docker.com/"
+            exit 1
+        fi
+
+        echo -e "\n${GREEN}Starting with Docker (production)...${NC}"
+        docker-compose -f docker-compose.prod.yml up -d
+
+        echo -e "${GREEN}✅ Services started!${NC}"
+        echo "Frontend: http://localhost"
+        echo "Backend: http://localhost:3000"
+        echo "To stop: docker-compose -f docker-compose.prod.yml down"
+        ;;
+
+    5)
         echo -e "${GREEN}Setup complete! Run this script again to start the servers.${NC}"
         exit 0
         ;;
