@@ -1,6 +1,6 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { keysApi, VirtualKey, VirtualKeyResponse } from "../lib/api";
+import { keysApi, type VirtualKey, type VirtualKeyResponse } from "../lib/api";
 
 export default function ApiKeys() {
   const queryClient = useQueryClient();
@@ -48,10 +48,10 @@ export default function ApiKeys() {
         ? parseFloat(formData.get("max_budget") as string)
         : undefined,
       rate_limit_rpm: formData.get("rate_limit_rpm")
-        ? parseInt(formData.get("rate_limit_rpm") as string)
+        ? parseInt(formData.get("rate_limit_rpm") as string, 10)
         : undefined,
       rate_limit_tpm: formData.get("rate_limit_tpm")
-        ? parseInt(formData.get("rate_limit_tpm") as string)
+        ? parseInt(formData.get("rate_limit_tpm") as string, 10)
         : undefined,
     });
 
@@ -88,6 +88,7 @@ export default function ApiKeys() {
           </p>
         </div>
         <button
+          type="button"
           onClick={() => setShowCreateModal(true)}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
@@ -106,6 +107,7 @@ export default function ApiKeys() {
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
+                  aria-hidden="true"
                 >
                   <path
                     strokeLinecap="round"
@@ -120,13 +122,13 @@ export default function ApiKeys() {
               </h3>
               <div className="mt-4 text-sm text-gray-500">
                 <p className="mb-2">
-                  <strong>Important:</strong> Copy this key now. You won't be
-                  able to see it again!
+                  <strong>Important:</strong> Copy this key now. You won't be able to see it again!
                 </p>
                 <div className="bg-gray-100 p-3 rounded-md break-all font-mono text-xs">
                   {newKeyData.key}
                 </div>
                 <button
+                  type="button"
                   onClick={() => copyToClipboard(newKeyData.key)}
                   className="mt-3 w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
                 >
@@ -135,6 +137,7 @@ export default function ApiKeys() {
               </div>
               <div className="mt-6">
                 <button
+                  type="button"
                   onClick={() => setNewKeyData(null)}
                   className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
@@ -151,51 +154,59 @@ export default function ApiKeys() {
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
           <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-md shadow-lg rounded-md bg-white">
             <div className="mt-3">
-              <h3 className="text-lg leading-6 font-medium text-gray-900">
-                Create New API Key
-              </h3>
+              <h3 className="text-lg leading-6 font-medium text-gray-900">Create New API Key</h3>
               <form onSubmit={handleCreateKey} className="mt-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="key-name" className="block text-sm font-medium text-gray-700">
                     Name (optional)
                   </label>
                   <input
                     type="text"
                     name="name"
+                    id="key-name"
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Production Key"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label htmlFor="max-budget" className="block text-sm font-medium text-gray-700">
                     Max Budget (USD, optional)
                   </label>
                   <input
                     type="number"
                     name="max_budget"
+                    id="max-budget"
                     step="0.01"
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="100.00"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="rate-limit-rpm"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Rate Limit - Requests/min (optional)
                   </label>
                   <input
                     type="number"
                     name="rate_limit_rpm"
+                    id="rate-limit-rpm"
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="60"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label
+                    htmlFor="rate-limit-tpm"
+                    className="block text-sm font-medium text-gray-700"
+                  >
                     Rate Limit - Tokens/min (optional)
                   </label>
                   <input
                     type="number"
                     name="rate_limit_tpm"
+                    id="rate-limit-tpm"
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="100000"
                   />
@@ -231,6 +242,7 @@ export default function ApiKeys() {
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              aria-hidden="true"
             >
               <path
                 strokeLinecap="round"
@@ -239,12 +251,8 @@ export default function ApiKeys() {
                 d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
               />
             </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">
-              No API keys
-            </h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Get started by creating a new API key.
-            </p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No API keys</h3>
+            <p className="mt-1 text-sm text-gray-500">Get started by creating a new API key.</p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
@@ -262,32 +270,23 @@ export default function ApiKeys() {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-sm text-gray-500 font-mono">
-                      {key.key_prefix}...
-                    </p>
+                    <p className="mt-1 text-sm text-gray-500 font-mono">{key.key_prefix}...</p>
                     <div className="mt-2 flex flex-wrap items-center text-sm text-gray-500 gap-x-4 gap-y-1">
                       {key.max_budget && (
                         <span>
-                          💰 Budget: ${key.current_spend.toFixed(2)} / $
-                          {key.max_budget.toFixed(2)}
+                          💰 Budget: ${key.current_spend.toFixed(2)} / ${key.max_budget.toFixed(2)}
                         </span>
                       )}
-                      {key.rate_limit_rpm && (
-                        <span>🔄 {key.rate_limit_rpm} req/min</span>
-                      )}
+                      {key.rate_limit_rpm && <span>🔄 {key.rate_limit_rpm} req/min</span>}
                       {key.rate_limit_tpm && (
-                        <span>
-                          🎫 {key.rate_limit_tpm.toLocaleString()} tokens/min
-                        </span>
+                        <span>🎫 {key.rate_limit_tpm.toLocaleString()} tokens/min</span>
                       )}
-                      <span>
-                        📅 Created:{" "}
-                        {new Date(key.created_at).toLocaleDateString()}
-                      </span>
+                      <span>📅 Created: {new Date(key.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>
                   <div className="flex space-x-2">
                     <button
+                      type="button"
                       onClick={() => handleToggleBlock(key)}
                       disabled={updateKeyMutation.isPending}
                       className={`px-3 py-1 text-sm rounded-md ${
@@ -299,10 +298,11 @@ export default function ApiKeys() {
                       {key.blocked ? "Unblock" : "Block"}
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         if (
                           confirm(
-                            "Are you sure you want to delete this key? This action cannot be undone.",
+                            "Are you sure you want to delete this key? This action cannot be undone."
                           )
                         ) {
                           deleteKeyMutation.mutate(key.id);

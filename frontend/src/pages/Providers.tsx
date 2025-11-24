@@ -1,9 +1,4 @@
-import {
-  CheckCircleIcon,
-  KeyIcon,
-  PlusIcon,
-  XCircleIcon,
-} from "@heroicons/react/24/outline";
+import { CheckCircleIcon, KeyIcon, PlusIcon, XCircleIcon } from "@heroicons/react/24/outline";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { type Provider, providersApi } from "../lib/api";
@@ -16,14 +11,10 @@ const Providers: React.FC = () => {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [showAddProviderModal, setShowAddProviderModal] = useState(false);
   const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
-    null,
-  );
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [apiKey, setApiKey] = useState("");
   const [azureResourceName, setAzureResourceName] = useState("");
-  const [deletingProviderId, setDeletingProviderId] = useState<string | null>(
-    null,
-  );
+  const [deletingProviderId, setDeletingProviderId] = useState<string | null>(null);
 
   // Fetch providers from backend on mount
   useEffect(() => {
@@ -76,15 +67,13 @@ const Providers: React.FC = () => {
         providers.map((p) =>
           p.id === selectedProvider.id
             ? { ...p, api_key_configured: false, status: "inactive" as const }
-            : p,
-        ),
+            : p
+        )
       );
 
       setShowDeleteConfirmModal(false);
       setSelectedProvider(null);
-      console.log(
-        `✅ ${result.message} (${result.models_removed} models removed)`,
-      );
+      console.log(`✅ ${result.message} (${result.models_removed} models removed)`);
     } catch (err) {
       console.error("Failed to delete provider:", err);
       setError("Failed to delete provider. Please try again.");
@@ -112,7 +101,7 @@ const Providers: React.FC = () => {
         const result = await providersApi.configureProvider(
           selectedProvider.id,
           apiKey,
-          selectedProvider.id === "azure" ? azureResourceName : undefined,
+          selectedProvider.id === "azure" ? azureResourceName : undefined
         );
 
         // Update local state on success
@@ -120,8 +109,8 @@ const Providers: React.FC = () => {
           providers.map((p) =>
             p.id === selectedProvider.id
               ? { ...p, api_key_configured: true, status: "active" as const }
-              : p,
-          ),
+              : p
+          )
         );
 
         setShowApiKeyModal(false);
@@ -130,9 +119,7 @@ const Providers: React.FC = () => {
         setSelectedProvider(null);
 
         // Show success message (optional - you could add toast notifications)
-        console.log(
-          `✅ ${result.message} (${result.models_configured} models)`,
-        );
+        console.log(`✅ ${result.message} (${result.models_configured} models)`);
       } catch (err) {
         console.error("Failed to configure provider:", err);
         setError("Failed to save API key. Please try again.");
@@ -189,6 +176,7 @@ const Providers: React.FC = () => {
         </div>
         {unconfiguredProviders.length > 0 && (
           <button
+            type="button"
             onClick={() => setShowAddProviderModal(true)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors"
           >
@@ -203,6 +191,7 @@ const Providers: React.FC = () => {
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <p className="text-gray-500 mb-4">No providers configured yet</p>
           <button
+            type="button"
             onClick={() => setShowAddProviderModal(true)}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors"
           >
@@ -220,9 +209,7 @@ const Providers: React.FC = () => {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
                   {getStatusIcon(provider.status)}
-                  <h3 className="ml-2 text-lg font-semibold text-gray-900">
-                    {provider.name}
-                  </h3>
+                  <h3 className="ml-2 text-lg font-semibold text-gray-900">{provider.name}</h3>
                 </div>
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadge(provider.status)}`}
@@ -234,9 +221,7 @@ const Providers: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <p className="text-sm text-gray-500">Endpoint</p>
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {provider.endpoint}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 truncate">{provider.endpoint}</p>
                 </div>
 
                 <div>
@@ -275,12 +260,14 @@ const Providers: React.FC = () => {
 
                 <div className="flex gap-2 mt-4">
                   <button
+                    type="button"
                     onClick={() => handleConfigureProvider(provider)}
                     className="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors"
                   >
                     Reconfigure
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleDeleteProvider(provider)}
                     disabled={deletingProviderId === provider.id}
                     className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100 disabled:opacity-50 transition-colors"
@@ -306,11 +293,15 @@ const Providers: React.FC = () => {
               {/* Azure-specific: Resource Name field */}
               {selectedProvider.id === "azure" && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="azure-resource"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Resource Name
                   </label>
                   <input
                     type="text"
+                    id="azure-resource"
                     value={azureResourceName}
                     onChange={(e) => setAzureResourceName(e.target.value)}
                     placeholder="e.g., my-company-openai"
@@ -323,11 +314,12 @@ const Providers: React.FC = () => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="api-key" className="block text-sm font-medium text-gray-700 mb-1">
                   API Key
                 </label>
                 <input
                   type="password"
+                  id="api-key"
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   placeholder="Enter your API key"
@@ -341,17 +333,16 @@ const Providers: React.FC = () => {
 
             <div className="flex justify-end gap-3 mt-6">
               <button
+                type="button"
                 onClick={() => setShowApiKeyModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveApiKey}
-                disabled={
-                  !apiKey ||
-                  (selectedProvider.id === "azure" && !azureResourceName)
-                }
+                disabled={!apiKey || (selectedProvider.id === "azure" && !azureResourceName)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
                 Save Configuration
@@ -365,26 +356,19 @@ const Providers: React.FC = () => {
       {showAddProviderModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Add Provider
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Select a provider to configure
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Provider</h3>
+            <p className="text-sm text-gray-500 mb-4">Select a provider to configure</p>
 
             <div className="space-y-3">
               {unconfiguredProviders.map((provider) => (
                 <button
+                  type="button"
                   key={provider.id}
                   onClick={() => handleAddProvider(provider)}
                   className="w-full p-4 text-left border border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
                 >
-                  <div className="font-medium text-gray-900">
-                    {provider.name}
-                  </div>
-                  <div className="text-sm text-gray-500 truncate">
-                    {provider.endpoint}
-                  </div>
+                  <div className="font-medium text-gray-900">{provider.name}</div>
+                  <div className="text-sm text-gray-500 truncate">{provider.endpoint}</div>
                   <div className="text-xs text-gray-400 mt-1">
                     {provider.models.length} models available
                   </div>
@@ -394,6 +378,7 @@ const Providers: React.FC = () => {
 
             <div className="flex justify-end mt-6">
               <button
+                type="button"
                 onClick={() => setShowAddProviderModal(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
               >
@@ -408,18 +393,16 @@ const Providers: React.FC = () => {
       {showDeleteConfirmModal && selectedProvider && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Delete Provider
-            </h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Delete Provider</h3>
             <p className="text-sm text-gray-600 mb-4">
               Are you sure you want to delete{" "}
-              <span className="font-semibold">{selectedProvider.name}</span>?
-              This will remove the API key and all associated model routes. This
-              action cannot be undone.
+              <span className="font-semibold">{selectedProvider.name}</span>? This will remove the
+              API key and all associated model routes. This action cannot be undone.
             </p>
 
             <div className="flex justify-end gap-3">
               <button
+                type="button"
                 onClick={() => {
                   setShowDeleteConfirmModal(false);
                   setSelectedProvider(null);
@@ -429,13 +412,12 @@ const Providers: React.FC = () => {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={confirmDeleteProvider}
                 disabled={deletingProviderId === selectedProvider.id}
                 className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-md hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
               >
-                {deletingProviderId === selectedProvider.id
-                  ? "Deleting..."
-                  : "Delete"}
+                {deletingProviderId === selectedProvider.id ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

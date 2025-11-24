@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 
 // Create axios instance with base configuration
 const api = axios.create({
@@ -19,7 +19,7 @@ api.interceptors.request.use(
   },
   (error) => {
     return Promise.reject(error);
-  },
+  }
 );
 
 // Response interceptor - handle 401 errors globally
@@ -41,7 +41,7 @@ api.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  },
+  }
 );
 
 export default api;
@@ -161,12 +161,9 @@ export const authApi = {
     return response.data;
   },
 
-  handleOAuthCallback: async (
-    code: string,
-    state: string,
-  ): Promise<AuthResponse> => {
+  handleOAuthCallback: async (code: string, state: string): Promise<AuthResponse> => {
     const response = await api.get<AuthResponse>(
-      `/auth/oauth/callback?code=${code}&state=${state}`,
+      `/auth/oauth/callback?code=${code}&state=${state}`
     );
     return response.data;
   },
@@ -179,13 +176,8 @@ export const keysApi = {
     return response.data;
   },
 
-  generateKey: async (
-    data: CreateVirtualKeyRequest,
-  ): Promise<VirtualKeyResponse> => {
-    const response = await api.post<VirtualKeyResponse>(
-      "/auth/key/generate",
-      data,
-    );
+  generateKey: async (data: CreateVirtualKeyRequest): Promise<VirtualKeyResponse> => {
+    const response = await api.post<VirtualKeyResponse>("/auth/key/generate", data);
     return response.data;
   },
 
@@ -199,9 +191,7 @@ export const keysApi = {
   },
 
   getKeyInfo: async (keyId: string): Promise<VirtualKey> => {
-    const response = await api.get<VirtualKey>(
-      `/auth/key/info?key_id=${keyId}`,
-    );
+    const response = await api.get<VirtualKey>(`/auth/key/info?key_id=${keyId}`);
     return response.data;
   },
 };
@@ -216,7 +206,7 @@ export const providersApi = {
   configureProvider: async (
     providerId: string,
     apiKey: string,
-    azureResourceName?: string,
+    azureResourceName?: string
   ): Promise<{
     success: boolean;
     message: string;
@@ -241,7 +231,7 @@ export const providersApi = {
   },
 
   deleteProvider: async (
-    providerId: string,
+    providerId: string
   ): Promise<{
     success: boolean;
     message: string;

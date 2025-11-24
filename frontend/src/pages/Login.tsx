@@ -18,11 +18,13 @@ export default function Login() {
     try {
       await login({ email, password });
       navigate("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login error:", err);
+      const error = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
       setError(
-        err.response?.data?.error?.message ||
-          "Failed to login. Please check your credentials.",
+        error.response?.data?.error?.message || "Failed to login. Please check your credentials."
       );
     } finally {
       setLoading(false);
@@ -34,11 +36,13 @@ export default function Login() {
       setError("");
       setLoading(true);
       await loginWithGitHub();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("GitHub OAuth error:", err);
+      const error = err as {
+        response?: { data?: { error?: { message?: string } } };
+      };
       setError(
-        err.response?.data?.error?.message ||
-          "Failed to initiate GitHub login. Please try again.",
+        error.response?.data?.error?.message || "Failed to initiate GitHub login. Please try again."
       );
       setLoading(false);
     }
@@ -53,10 +57,7 @@ export default function Login() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Or{" "}
-            <Link
-              to="/register"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
+            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500">
               create a new account
             </Link>
           </p>
@@ -121,9 +122,7 @@ export default function Login() {
               <div className="w-full border-t border-gray-300" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">
-                Or continue with
-              </span>
+              <span className="px-2 bg-gray-50 text-gray-500">Or continue with</span>
             </div>
           </div>
 
@@ -138,6 +137,7 @@ export default function Login() {
                 className="w-5 h-5 mr-2"
                 fill="currentColor"
                 viewBox="0 0 20 20"
+                aria-hidden="true"
               >
                 <path
                   fillRule="evenodd"

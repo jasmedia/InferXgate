@@ -52,9 +52,7 @@ const Settings: React.FC = () => {
       <div className="space-y-6">
         {/* General Settings */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            General Settings
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
@@ -100,15 +98,9 @@ const Settings: React.FC = () => {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="claude-sonnet-4-5-20250929">
-                  Claude Sonnet 4.5
-                </option>
-                <option value="claude-haiku-4-5-20251001">
-                  Claude Haiku 4.5
-                </option>
-                <option value="claude-opus-4-1-20250805">
-                  Claude Opus 4.1
-                </option>
+                <option value="claude-sonnet-4-5-20250929">Claude Sonnet 4.5</option>
+                <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                <option value="claude-opus-4-1-20250805">Claude Opus 4.1</option>
                 <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                 <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
                 <option value="gpt-5">GPT-5</option>
@@ -163,6 +155,7 @@ const Settings: React.FC = () => {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => handleSave("General")}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
@@ -172,9 +165,7 @@ const Settings: React.FC = () => {
 
         {/* Rate Limiting */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Rate Limiting
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Rate Limiting</h3>
           <div className="space-y-4">
             <div className="flex items-center">
               <input
@@ -192,10 +183,7 @@ const Settings: React.FC = () => {
                 }
                 className="mr-2"
               />
-              <label
-                htmlFor="rateLimitEnabled"
-                className="text-sm text-gray-700"
-              >
+              <label htmlFor="rateLimitEnabled" className="text-sm text-gray-700">
                 Enable Rate Limiting
               </label>
             </div>
@@ -274,6 +262,7 @@ const Settings: React.FC = () => {
             )}
           </div>
           <button
+            type="button"
             onClick={() => handleSave("Rate Limiting")}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
@@ -368,10 +357,7 @@ const Settings: React.FC = () => {
                     }
                     className="mr-2"
                   />
-                  <label
-                    htmlFor="semanticCaching"
-                    className="text-sm text-gray-700"
-                  >
+                  <label htmlFor="semanticCaching" className="text-sm text-gray-700">
                     Enable Semantic Caching (Experimental)
                   </label>
                 </div>
@@ -379,6 +365,7 @@ const Settings: React.FC = () => {
             )}
           </div>
           <button
+            type="button"
             onClick={() => handleSave("Caching")}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
@@ -391,10 +378,7 @@ const Settings: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Logging</h3>
           <div className="space-y-4">
             <div>
-              <label
-                htmlFor="log-level"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="log-level" className="block text-sm font-medium text-gray-700 mb-1">
                 Log Level
               </label>
               <select
@@ -478,6 +462,7 @@ const Settings: React.FC = () => {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => handleSave("Logging")}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
@@ -582,6 +567,7 @@ const Settings: React.FC = () => {
             </div>
           </div>
           <button
+            type="button"
             onClick={() => handleSave("Security")}
             className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
