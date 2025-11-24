@@ -1236,6 +1236,47 @@ dependencies = [
 ]
 
 [[package]]
+name = "inferxgate"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-stream",
+ "async-trait",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "bytes",
+ "chrono",
+ "config",
+ "dashmap",
+ "dotenv",
+ "eventsource-stream",
+ "futures",
+ "hex",
+ "jsonwebtoken",
+ "lazy_static",
+ "oauth2",
+ "prometheus",
+ "rand",
+ "redis",
+ "reqwest 0.12.24",
+ "serde",
+ "serde_json",
+ "serde_urlencoded",
+ "sha2",
+ "sqlx",
+ "thiserror 1.0.69",
+ "tokio",
+ "tokio-stream",
+ "tower 0.4.13",
+ "tower-http 0.5.2",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+]
+
+[[package]]
 name = "inout"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1355,47 +1396,6 @@ name = "litemap"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6373607a59f0be73a39b6fe456b8192fcc3585f602af20751600e974dd455e77"
-
-[[package]]
-name = "llm-gateway"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-stream",
- "async-trait",
- "axum",
- "base64 0.22.1",
- "bcrypt",
- "bytes",
- "chrono",
- "config",
- "dashmap",
- "dotenv",
- "eventsource-stream",
- "futures",
- "hex",
- "jsonwebtoken",
- "lazy_static",
- "oauth2",
- "prometheus",
- "rand",
- "redis",
- "reqwest 0.12.24",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "sha2",
- "sqlx",
- "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
- "tower 0.4.13",
- "tower-http 0.5.2",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
-]
 
 [[package]]
 name = "lock_api"
