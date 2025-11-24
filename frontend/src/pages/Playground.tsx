@@ -5,13 +5,31 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import api from "../lib/api";
 
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+}
+
+interface Model {
+  id: string;
+  owned_by: string;
+}
+
+interface ChatPayload {
+  model: string;
+  messages: Message[];
+  temperature: number;
+  max_tokens: number;
+  stream: boolean;
+}
+
 const Playground: React.FC = () => {
   const [model, setModel] = useState("");
   const [message, setMessage] = useState("");
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(1024);
   const [stream, setStream] = useState(false);
-  const [conversation, setConversation] = useState<any[]>([]);
+  const [conversation, setConversation] = useState<Message[]>([]);
 
   // Fetch available models
   const { data: models } = useQuery({
@@ -31,7 +49,7 @@ const Playground: React.FC = () => {
 
   // Chat completion mutation
   const chatMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: ChatPayload) => {
       if (stream) {
         // For streaming, we'd need to implement EventSource
         const token = localStorage.getItem("jwt_token");
@@ -154,15 +172,19 @@ const Playground: React.FC = () => {
           <div className="space-y-4">
             {/* Model Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="model-select"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Model
               </label>
               <select
+                id="model-select"
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {models?.map((m: any) => (
+                {models?.map((m: Model) => (
                   <option key={m.id} value={m.id}>
                     {m.id}
                   </option>
@@ -172,11 +194,12 @@ const Playground: React.FC = () => {
 
             {/* Temperature */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
                 Temperature: {temperature}
               </label>
               <input
                 type="range"
+                id="temperature"
                 min="0"
                 max="2"
                 step="0.1"
@@ -188,11 +211,12 @@ const Playground: React.FC = () => {
 
             {/* Max Tokens */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="max-tokens" className="block text-sm font-medium text-gray-700 mb-1">
                 Max Tokens
               </label>
               <input
                 type="number"
+                id="max-tokens"
                 value={maxTokens}
                 onChange={(e) => setMaxTokens(parseInt(e.target.value, 10))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -215,6 +239,7 @@ const Playground: React.FC = () => {
 
             {/* Clear Button */}
             <button
+              type="button"
               onClick={handleClear}
               className="w-full px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
             >
@@ -235,14 +260,12 @@ const Playground: React.FC = () => {
               <div className="space-y-4">
                 {conversation.map((msg, idx) => (
                   <div
-                    key={idx}
+                    key={`msg-${idx}-${msg.role}`}
                     className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                   >
                     <div
                       className={`max-w-[70%] px-4 py-2 rounded-lg ${
-                        msg.role === "user"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-100 text-gray-900"
+                        msg.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
                       }`}
                     >
                       <div className="text-xs font-medium mb-1 opacity-70">
@@ -280,6 +303,7 @@ const Playground: React.FC = () => {
                 disabled={chatMutation.isPending}
               />
               <button
+                type="button"
                 onClick={handleSend}
                 disabled={!message.trim() || chatMutation.isPending}
                 className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"

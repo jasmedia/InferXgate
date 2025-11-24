@@ -30,7 +30,7 @@ export default function OAuthCallback() {
           // Redirect to dashboard
           navigate("/");
           return;
-        } catch (err: any) {
+        } catch (err: unknown) {
           console.error("Failed to parse user data:", err);
           setError("Failed to complete authentication");
           setTimeout(() => navigate("/login"), 3000);
@@ -46,9 +46,7 @@ export default function OAuthCallback() {
       // Check for OAuth error
       const oauthError = searchParams.get("error");
       if (oauthError) {
-        setError(
-          `OAuth error: ${searchParams.get("error_description") || oauthError}`,
-        );
+        setError(`OAuth error: ${searchParams.get("error_description") || oauthError}`);
         setTimeout(() => navigate("/login"), 3000);
         return;
       }
@@ -80,11 +78,14 @@ export default function OAuthCallback() {
 
         // Redirect to dashboard
         navigate("/");
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error("OAuth callback error:", err);
+        const error = err as {
+          response?: { data?: { error?: { message?: string } } };
+        };
         setError(
-          err.response?.data?.error?.message ||
-            "Failed to complete OAuth login. Please try again.",
+          error.response?.data?.error?.message ||
+            "Failed to complete OAuth login. Please try again."
         );
         setTimeout(() => navigate("/login"), 3000);
       }
@@ -104,6 +105,7 @@ export default function OAuthCallback() {
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
+                aria-hidden="true"
               >
                 <path
                   strokeLinecap="round"
@@ -113,13 +115,9 @@ export default function OAuthCallback() {
                 />
               </svg>
             </div>
-            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-              Authentication Failed
-            </h2>
+            <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Authentication Failed</h2>
             <p className="mt-2 text-sm text-gray-600">{error}</p>
-            <p className="mt-4 text-xs text-gray-500">
-              Redirecting to login page...
-            </p>
+            <p className="mt-4 text-xs text-gray-500">Redirecting to login page...</p>
           </div>
         ) : (
           <div>
@@ -129,6 +127,7 @@ export default function OAuthCallback() {
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
+                aria-hidden="true"
               >
                 <circle
                   className="opacity-25"
@@ -148,9 +147,7 @@ export default function OAuthCallback() {
             <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
               Completing authentication
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Please wait while we sign you in...
-            </p>
+            <p className="mt-2 text-sm text-gray-600">Please wait while we sign you in...</p>
           </div>
         )}
       </div>

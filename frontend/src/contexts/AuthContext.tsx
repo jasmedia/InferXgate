@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { authApi, User, RegisterRequest, LoginRequest } from '../lib/api';
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
+import { authApi, type LoginRequest, type RegisterRequest, type User } from "../lib/api";
 
 interface AuthContextType {
   user: User | null;
@@ -22,8 +23,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load auth state from localStorage on mount
   useEffect(() => {
     const loadAuthState = async () => {
-      const storedToken = localStorage.getItem('jwt_token');
-      const storedUser = localStorage.getItem('user');
+      const storedToken = localStorage.getItem("jwt_token");
+      const storedUser = localStorage.getItem("user");
 
       if (storedToken && storedUser) {
         try {
@@ -33,12 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Verify token is still valid by fetching current user
           const currentUser = await authApi.getCurrentUser();
           setUser(currentUser);
-          localStorage.setItem('user', JSON.stringify(currentUser));
+          localStorage.setItem("user", JSON.stringify(currentUser));
         } catch (error) {
           // Token invalid, clear auth state
-          console.error('Failed to load auth state:', error);
-          localStorage.removeItem('jwt_token');
-          localStorage.removeItem('user');
+          console.error("Failed to load auth state:", error);
+          localStorage.removeItem("jwt_token");
+          localStorage.removeItem("user");
           setToken(null);
           setUser(null);
         }
@@ -53,8 +54,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const setAuthData = (newToken: string, newUser: User) => {
     setToken(newToken);
     setUser(newUser);
-    localStorage.setItem('jwt_token', newToken);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    localStorage.setItem("jwt_token", newToken);
+    localStorage.setItem("user", JSON.stringify(newUser));
   };
 
   const login = async (data: LoginRequest) => {
@@ -62,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authApi.login(data);
       setAuthData(response.token, response.user);
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
       throw error;
     }
   };
@@ -72,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authApi.register(data);
       setAuthData(response.token, response.user);
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error("Registration failed:", error);
       throw error;
     }
   };
@@ -81,13 +82,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authApi.logout();
     } catch (error) {
-      console.error('Logout API call failed:', error);
+      console.error("Logout API call failed:", error);
       // Continue with local logout even if API call fails
     } finally {
       setToken(null);
       setUser(null);
-      localStorage.removeItem('jwt_token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("jwt_token");
+      localStorage.removeItem("user");
     }
   };
 
@@ -96,12 +97,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { auth_url, state } = await authApi.startGitHubOAuth();
 
       // Store state for CSRF verification
-      sessionStorage.setItem('oauth_state', state);
+      sessionStorage.setItem("oauth_state", state);
 
       // Redirect to GitHub OAuth
       window.location.href = auth_url;
     } catch (error) {
-      console.error('GitHub OAuth initiation failed:', error);
+      console.error("GitHub OAuth initiation failed:", error);
       throw error;
     }
   };
@@ -123,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };

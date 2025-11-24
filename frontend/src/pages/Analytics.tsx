@@ -15,6 +15,34 @@ import {
 } from "recharts";
 import api from "../lib/api";
 
+interface ModelUsage {
+  model: string;
+  count: number;
+  total_cost: number;
+}
+
+interface ProviderUsage {
+  provider: string;
+  count: number;
+  total_cost: number;
+  total_tokens: number;
+}
+
+interface Request {
+  id: string;
+  model: string;
+  provider: string;
+  error: string | null;
+  created_at: string;
+}
+
+interface ModelUsageData {
+  name: string;
+  value: number;
+  cost: number;
+  color: string;
+}
+
 const Analytics: React.FC = () => {
   // Fetch usage statistics from the /stats endpoint
   const { data: statsData, isLoading } = useQuery({
@@ -30,19 +58,17 @@ const Analytics: React.FC = () => {
   const recentRequests = statsData?.recent_requests || [];
 
   // Transform model usage data for pie chart
-  const modelUsageData =
-    usageStats?.requests_by_model?.map((model: any, idx: number) => ({
+  const modelUsageData: ModelUsageData[] =
+    usageStats?.requests_by_model?.map((model: ModelUsage, idx: number) => ({
       name: model.model,
       value: model.count,
       cost: model.total_cost,
-      color: ["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#6B7280"][
-        idx % 6
-      ],
+      color: ["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B", "#EF4444", "#6B7280"][idx % 6],
     })) || [];
 
   // Transform provider data for bar chart
   const providerData =
-    usageStats?.requests_by_provider?.map((provider: any) => ({
+    usageStats?.requests_by_provider?.map((provider: ProviderUsage) => ({
       provider: provider.provider,
       requests: provider.count,
       cost: provider.total_cost,
@@ -50,7 +76,7 @@ const Analytics: React.FC = () => {
     })) || [];
 
   // Get error requests
-  const errorRequests = recentRequests.filter((req: any) => req.error !== null);
+  const errorRequests = recentRequests.filter((req: Request) => req.error !== null);
 
   const metrics = [
     {
@@ -59,9 +85,7 @@ const Analytics: React.FC = () => {
     },
     {
       label: "Avg Response Time",
-      value: usageStats
-        ? `${Math.round(usageStats.average_latency_ms)}ms`
-        : "N/A",
+      value: usageStats ? `${Math.round(usageStats.average_latency_ms)}ms` : "N/A",
     },
     {
       label: "Cache Hit Rate",
@@ -95,9 +119,7 @@ const Analytics: React.FC = () => {
         {metrics.map((metric) => (
           <div key={metric.label} className="bg-white rounded-lg shadow p-4">
             <p className="text-sm text-gray-500">{metric.label}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">
-              {metric.value}
-            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">{metric.value}</p>
           </div>
         ))}
       </div>
@@ -106,9 +128,7 @@ const Analytics: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Model Usage Distribution */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Requests by Model
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Requests by Model</h3>
           {modelUsageData.length === 0 ? (
             <p className="text-sm text-gray-500">No data available</p>
           ) : (
@@ -119,15 +139,13 @@ const Analytics: React.FC = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, value }) =>
-                    `${name.substring(0, 20)}: ${value}`
-                  }
+                  label={({ name, value }) => `${name.substring(0, 20)}: ${value}`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {modelUsageData.map((entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  {modelUsageData.map((entry: ModelUsageData) => (
+                    <Cell key={entry.name} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -138,9 +156,7 @@ const Analytics: React.FC = () => {
 
         {/* Provider Comparison */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Requests by Provider
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Requests by Provider</h3>
           {providerData.length === 0 ? (
             <p className="text-sm text-gray-500">No data available</p>
           ) : (
@@ -159,24 +175,16 @@ const Analytics: React.FC = () => {
 
         {/* Cost by Model */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Cost by Model
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Cost by Model</h3>
           {modelUsageData.length === 0 ? (
             <p className="text-sm text-gray-500">No data available</p>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={modelUsageData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#6B7280"
-                  angle={-45}
-                  textAnchor="end"
-                  height={100}
-                />
+                <XAxis dataKey="name" stroke="#6B7280" angle={-45} textAnchor="end" height={100} />
                 <YAxis stroke="#6B7280" />
-                <Tooltip formatter={(value: any) => `$${value.toFixed(4)}`} />
+                <Tooltip formatter={(value: number) => `$${value.toFixed(4)}`} />
                 <Bar dataKey="cost" fill="#10B981" name="Cost (USD)" />
               </BarChart>
             </ResponsiveContainer>
@@ -185,9 +193,7 @@ const Analytics: React.FC = () => {
 
         {/* Tokens by Provider */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Token Usage by Provider
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Token Usage by Provider</h3>
           {providerData.length === 0 ? (
             <p className="text-sm text-gray-500">No data available</p>
           ) : (
@@ -196,7 +202,7 @@ const Analytics: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                 <XAxis dataKey="provider" stroke="#6B7280" />
                 <YAxis stroke="#6B7280" />
-                <Tooltip formatter={(value: any) => value.toLocaleString()} />
+                <Tooltip formatter={(value: number) => value.toLocaleString()} />
                 <Bar dataKey="tokens" fill="#8B5CF6" name="Total Tokens" />
               </BarChart>
             </ResponsiveContainer>
@@ -206,35 +212,23 @@ const Analytics: React.FC = () => {
 
       {/* Recent Errors Table */}
       <div className="mt-8 bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Recent Errors
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Errors</h3>
         {errorRequests.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No errors in recent requests 🎉
-          </p>
+          <p className="text-sm text-gray-500">No errors in recent requests 🎉</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 px-4 font-medium text-gray-700">
-                    Time
-                  </th>
-                  <th className="text-left py-2 px-4 font-medium text-gray-700">
-                    Model
-                  </th>
-                  <th className="text-left py-2 px-4 font-medium text-gray-700">
-                    Provider
-                  </th>
-                  <th className="text-left py-2 px-4 font-medium text-gray-700">
-                    Error
-                  </th>
+                  <th className="text-left py-2 px-4 font-medium text-gray-700">Time</th>
+                  <th className="text-left py-2 px-4 font-medium text-gray-700">Model</th>
+                  <th className="text-left py-2 px-4 font-medium text-gray-700">Provider</th>
+                  <th className="text-left py-2 px-4 font-medium text-gray-700">Error</th>
                 </tr>
               </thead>
               <tbody>
-                {errorRequests.slice(0, 10).map((request: any, idx: number) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
+                {errorRequests.slice(0, 10).map((request: Request) => (
+                  <tr key={request.id} className="border-b hover:bg-gray-50">
                     <td className="py-2 px-4 text-gray-600">
                       {new Date(request.created_at).toLocaleString()}
                     </td>
@@ -254,9 +248,7 @@ const Analytics: React.FC = () => {
       {/* Summary Statistics */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">
-            Total Tokens Processed
-          </h3>
+          <h3 className="text-sm font-medium text-gray-500 mb-2">Total Tokens Processed</h3>
           <p className="text-3xl font-bold text-gray-900">
             {usageStats?.total_tokens?.toLocaleString() || "0"}
           </p>
@@ -264,9 +256,7 @@ const Analytics: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-sm font-medium text-gray-500 mb-2">
-            Average Cost per Request
-          </h3>
+          <h3 className="text-sm font-medium text-gray-500 mb-2">Average Cost per Request</h3>
           <p className="text-3xl font-bold text-gray-900">
             {usageStats && usageStats.total_requests > 0
               ? `$${(usageStats.total_cost / usageStats.total_requests).toFixed(4)}`

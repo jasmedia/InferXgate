@@ -9,6 +9,22 @@ import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import api from "../lib/api";
 
+interface Model {
+  id: string;
+  owned_by: string;
+}
+
+interface Request {
+  id: string;
+  model: string;
+  created_at: string;
+  total_tokens: number;
+  cost_usd: number;
+  error: string | null;
+  cached: boolean;
+  latency_ms: number;
+}
+
 const Dashboard: React.FC = () => {
   // Fetch models
   const { data: models, isLoading: modelsLoading } = useQuery({
@@ -57,9 +73,7 @@ const Dashboard: React.FC = () => {
     },
     {
       name: "Avg Latency",
-      value: usageStats
-        ? `${Math.round(usageStats.average_latency_ms)}ms`
-        : "N/A",
+      value: usageStats ? `${Math.round(usageStats.average_latency_ms)}ms` : "N/A",
       icon: ClockIcon,
       color: "bg-yellow-500",
     },
@@ -95,15 +109,11 @@ const Dashboard: React.FC = () => {
           >
             <div className="flex items-center">
               <div className={`p-3 rounded-lg ${stat.color} bg-opacity-10`}>
-                <stat.icon
-                  className={`w-6 h-6 text-white ${stat.color.replace("bg-", "text-")}`}
-                />
+                <stat.icon className={`w-6 h-6 text-white ${stat.color.replace("bg-", "text-")}`} />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {stat.value}
-                </p>
+                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
               </div>
             </div>
           </div>
@@ -114,9 +124,7 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* System Status */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            System Status
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">System Status</h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-500">Gateway Status</span>
@@ -148,14 +156,12 @@ const Dashboard: React.FC = () => {
 
         {/* Available Models */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Available Models
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Available Models</h3>
           {modelsLoading ? (
             <div className="text-sm text-gray-500">Loading models...</div>
           ) : (
             <div className="space-y-2 max-h-40 overflow-y-auto">
-              {models?.map((model: any) => (
+              {models?.map((model: Model) => (
                 <div
                   key={model.id}
                   className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded"
@@ -173,16 +179,14 @@ const Dashboard: React.FC = () => {
 
       {/* Recent Activity */}
       <div className="mt-8 bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Recent Activity
-        </h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
         {recentRequests.length === 0 ? (
           <p className="text-sm text-gray-500">
             No recent requests. Make some API calls to see them here!
           </p>
         ) : (
           <div className="space-y-3">
-            {recentRequests.slice(0, 10).map((request: any, idx: number) => {
+            {recentRequests.slice(0, 10).map((request: Request) => {
               const timeAgo = request.created_at
                 ? new Date(request.created_at).toLocaleString()
                 : "Unknown time";
@@ -193,11 +197,7 @@ const Dashboard: React.FC = () => {
                 : isCached
                   ? "bg-blue-500"
                   : "bg-green-500";
-              const statusText = isError
-                ? "Error"
-                : isCached
-                  ? "Cached"
-                  : "Success";
+              const statusText = isError ? "Error" : isCached ? "Cached" : "Success";
               const statusTextColor = isError
                 ? "text-red-600"
                 : isCached
@@ -205,29 +205,19 @@ const Dashboard: React.FC = () => {
                   : "text-green-600";
 
               return (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between py-2 border-b"
-                >
+                <div key={request.id} className="flex items-center justify-between py-2 border-b">
                   <div className="flex items-center flex-1">
-                    <div
-                      className={`w-2 h-2 ${statusColor} rounded-full mr-3`}
-                    ></div>
+                    <div className={`w-2 h-2 ${statusColor} rounded-full mr-3`}></div>
                     <div className="flex-1">
                       <p className="text-sm text-gray-900">{request.model}</p>
                       <p className="text-xs text-gray-500">
-                        {timeAgo} • {request.total_tokens} tokens • $
-                        {request.cost_usd?.toFixed(4)}
+                        {timeAgo} • {request.total_tokens} tokens • ${request.cost_usd?.toFixed(4)}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs ${statusTextColor}`}>
-                      {statusText}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {request.latency_ms}ms
-                    </span>
+                    <span className={`text-xs ${statusTextColor}`}>{statusText}</span>
+                    <span className="text-xs text-gray-400">{request.latency_ms}ms</span>
                   </div>
                 </div>
               );
