@@ -65,6 +65,7 @@ Services will be available at:
 For development, you'll need:
 - Rust 1.75+ (install from [rustup.rs](https://rustup.rs))
 - Bun 1.0+ (install from [bun.sh](https://bun.sh))
+- Docker (for PostgreSQL and Redis)
 - API keys for providers you want to use
 
 ### Backend Setup (Development)
@@ -75,14 +76,30 @@ git clone https://github.com/jasmedia/InferXgate.git
 cd InferXgate
 ```
 
-2. Set up environment variables:
+2. Start PostgreSQL and Redis with Docker:
+```bash
+docker run -d --name inferxgate-postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=inferxgate \
+  -p 5432:5432 \
+  postgres:18-alpine
+
+docker run -d --name inferxgate-redis \
+  -p 6379:6379 \
+  redis:7-alpine
+```
+
+3. Set up environment variables:
 ```bash
 cd backend
 cp .env.example .env
 # Edit .env with your API keys
+# Ensure DATABASE_URL=postgresql://postgres:postgres@localhost/inferxgate
+# Ensure REDIS_URL=redis://localhost:6379
 ```
 
-3. Build and run the Rust backend:
+4. Build and run the Rust backend:
 ```bash
 cargo build --release
 cargo run --release
@@ -408,6 +425,8 @@ LOG_LEVEL=debug cargo run
 ## Contributing
 
 Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
 
 ### Development Workflow
 
