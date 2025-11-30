@@ -1,5 +1,12 @@
 # InferXgate - Blazing fast LLM Gateway for 100+ LLMs
 
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)
+![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)
+![Axum](https://img.shields.io/badge/Axum-0.7-purple.svg)
+![React](https://img.shields.io/badge/React-18+-61DAFB.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
+
 A high-performance LLM Gateway built in Rust with a React dashboard that provides a unified OpenAI-compatible API interface for multiple LLM providers.
 
 ![InferXgate Dashboard](docs/images/dashboard.png)
