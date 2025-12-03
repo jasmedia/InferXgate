@@ -1,5 +1,5 @@
 # Build stage
-FROM rust:1.91-slim-trixie as builder
+FROM rust:1.91-slim-trixie AS builder
 
 WORKDIR /app
 
@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
-COPY --from=builder /app/target/release/llm-gateway /app/llm-gateway
+COPY --from=builder /app/target/release/inferxgate /app/inferxgate
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -44,4 +44,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Run the binary
-CMD ["./llm-gateway"]
+CMD ["./inferxgate"]
