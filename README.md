@@ -1,5 +1,12 @@
 # InferXgate - Blazing fast LLM Gateway for 100+ LLMs
 
+![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)
+![Rust](https://img.shields.io/badge/Rust-1.75+-orange.svg)
+![Axum](https://img.shields.io/badge/Axum-0.7-purple.svg)
+![React](https://img.shields.io/badge/React-18+-61DAFB.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-3178C6.svg)
+![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
+
 A high-performance LLM Gateway built in Rust with a React dashboard that provides a unified OpenAI-compatible API interface for multiple LLM providers.
 
 ![InferXgate Dashboard](docs/images/dashboard.png)
@@ -7,8 +14,8 @@ A high-performance LLM Gateway built in Rust with a React dashboard that provide
 ## Features
 
 ### Currently Supported Providers
-- ✅ **Anthropic** (Claude 4.5, 4.1, 4.0, 3.5, 3)
-- ✅ **Google Gemini** (Gemini 2.5 Pro, Flash, 2.0 Flash)
+- ✅ **Anthropic** (Claude Opus 4.5, Sonnet 4.5, Haiku 4.5, 4.1, 4.0, 3.5, 3)
+- ✅ **Google Gemini** (Gemini 3 Pro, 2.5 Pro, 2.5 Flash, 2.0 Flash)
 - ✅ **OpenAI** (GPT-5, GPT-4.1, GPT-4 Turbo)
 - ✅ **Azure OpenAI** (All Azure-deployed OpenAI models)
 
@@ -176,7 +183,7 @@ client = OpenAI(
 
 # Use any supported model
 response = client.chat.completions.create(
-    model="claude-3-opus-20240229",  # or "gemini-1.5-pro"
+    model="claude-opus-4-5-20251101",  # or "gemini-3-pro-preview"
     messages=[
         {"role": "user", "content": "Hello, how are you?"}
     ],
@@ -193,7 +200,7 @@ print(response.choices[0].message.content)
 curl http://localhost:3000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3-opus-20240229",
+    "model": "claude-opus-4-5-20251101",
     "messages": [
       {"role": "user", "content": "Hello!"}
     ],
@@ -206,7 +213,7 @@ curl http://localhost:3000/v1/chat/completions \
 
 ```python
 stream = client.chat.completions.create(
-    model="gemini-1.5-pro",
+    model="gemini-2.5-pro",
     messages=[{"role": "user", "content": "Write a story"}],
     stream=True
 )
@@ -230,7 +237,7 @@ for chunk in stream:
 
 ```json
 {
-  "model": "claude-3-opus-20240229",
+  "model": "claude-opus-4-5-20251101",
   "messages": [
     {
       "role": "system",
@@ -260,7 +267,7 @@ for chunk in stream:
   "id": "chatcmpl-abc123",
   "object": "chat.completion",
   "created": 1699000000,
-  "model": "claude-3-opus-20240229",
+  "model": "claude-opus-4-5-20251101",
   "choices": [
     {
       "index": 0,
