@@ -125,7 +125,7 @@ const Playground: React.FC = () => {
   const handleSend = () => {
     if (!message.trim()) return;
 
-    const userMessage = {
+    const userMessage: Message = {
       role: "user",
       content: message,
     };
@@ -194,7 +194,10 @@ const Playground: React.FC = () => {
 
             {/* Temperature */}
             <div>
-              <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="temperature"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Temperature: {temperature}
               </label>
               <input
@@ -211,7 +214,10 @@ const Playground: React.FC = () => {
 
             {/* Max Tokens */}
             <div>
-              <label htmlFor="max-tokens" className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="max-tokens"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Max Tokens
               </label>
               <input
@@ -265,7 +271,9 @@ const Playground: React.FC = () => {
                   >
                     <div
                       className={`max-w-[70%] px-4 py-2 rounded-lg ${
-                        msg.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100 text-gray-900"
+                        msg.role === "user"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-100 text-gray-900"
                       }`}
                     >
                       <div className="text-xs font-medium mb-1 opacity-70">
