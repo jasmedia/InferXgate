@@ -1,17 +1,26 @@
-.PHONY: help build run test clean docker-build docker-up docker-down install dev
+.PHONY: help build run test clean docker-build docker-up docker-down docker-watch docker-logs install dev fmt lint setup migrate
 
 # Default target
 help:
 	@echo "LLM Gateway - Available commands:"
+	@echo ""
+	@echo "Local Development:"
 	@echo "  make install       - Install all dependencies"
-	@echo "  make dev          - Start development servers"
-	@echo "  make build        - Build both backend and frontend"
-	@echo "  make run          - Run production builds"
-	@echo "  make test         - Run all tests"
-	@echo "  make clean        - Clean build artifacts"
-	@echo "  make docker-build - Build Docker images"
-	@echo "  make docker-up    - Start services with Docker Compose"
-	@echo "  make docker-down  - Stop Docker services"
+	@echo "  make dev           - Start development servers (local)"
+	@echo "  make build         - Build both backend and frontend"
+	@echo "  make run           - Run production builds"
+	@echo "  make test          - Run all tests"
+	@echo "  make clean         - Clean build artifacts"
+	@echo ""
+	@echo "Docker Development:"
+	@echo "  make docker-watch  - Start with file watching (recommended)"
+	@echo "  make docker-up     - Start services"
+	@echo "  make docker-down   - Stop services"
+	@echo "  make docker-build  - Build images"
+	@echo "  make docker-logs   - View logs"
+	@echo ""
+	@echo "Docker Production:"
+	@echo "  make docker-prod   - Start production (uses docker-compose.prod.yml)"
 
 # Install dependencies
 install:
@@ -68,24 +77,47 @@ clean:
 	cd frontend && rm -rf dist node_modules
 	@echo "Clean complete!"
 
-# Docker commands
+# Docker development commands
 docker-build:
 	@echo "Building Docker images..."
-	docker-compose build
+	docker compose build
 
 docker-up:
 	@echo "Starting Docker services..."
-	docker-compose up -d
+	docker compose up -d
+	@echo "Services are running!"
+	@echo "App:       http://inferxgate.localhost"
+	@echo "API:       http://inferxgate.localhost/api"
+	@echo "Traefik:   http://traefik.inferxgate.localhost"
+
+docker-watch:
+	@echo "Starting Docker with file watching..."
+	@echo "App:       http://inferxgate.localhost"
+	@echo "API:       http://inferxgate.localhost/api"
+	@echo "Traefik:   http://traefik.inferxgate.localhost"
+	@echo ""
+	@echo "File changes will be automatically synced/rebuilt."
+	@echo "Press Ctrl+C to stop."
+	docker compose watch
+
+docker-down:
+	@echo "Stopping Docker services..."
+	docker compose down
+
+docker-logs:
+	docker compose logs -f
+
+# Docker production commands
+docker-prod:
+	@echo "Starting Docker production services..."
+	docker compose -f docker-compose.prod.yml up -d
 	@echo "Services are running!"
 	@echo "Frontend: http://localhost"
 	@echo "Backend: http://localhost:3000"
 
-docker-down:
-	@echo "Stopping Docker services..."
-	docker-compose down
-
-docker-logs:
-	docker-compose logs -f
+docker-prod-down:
+	@echo "Stopping Docker production services..."
+	docker compose -f docker-compose.prod.yml down
 
 # Database migrations (for future use)
 migrate:

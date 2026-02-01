@@ -1,83 +1,126 @@
 services:
+  traefik:
+    image: traefik:v3.2
+    container_name: llm-gateway-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - llm-gateway-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.inferxgate.localhost`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: dev
     container_name: llm-gateway-backend
-    ports:
-      - "3000:3000"
     environment:
       - HOST=0.0.0.0
       - PORT=3000
-      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - RUST_BACKTRACE=1
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
-      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DATABASE_URL=${DATABASE_URL:-postgres://inferxgate:inferxgate@postgres:5432/inferxgate}
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=${JWT_SECRET:-change-me-in-production}
+      - JWT_SECRET=${JWT_SECRET:-dev-secret-change-in-production}
       - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
       - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
-      - OAUTH_REDIRECT_URL=${OAUTH_REDIRECT_URL:-http://localhost:3000/auth/oauth/callback}
-      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+      - OAUTH_REDIRECT_URL=${OAUTH_REDIRECT_URL:-http://inferxgate.localhost/api/auth/oauth/callback}
+      - FRONTEND_URL=${FRONTEND_URL:-http://inferxgate.localhost}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     networks:
       - llm-gateway-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`inferxgate.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/v1`) || PathPrefix(`/health`))"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+      - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
+      - "traefik.http.routers.backend-api.rule=Host(`inferxgate.localhost`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-api.middlewares=strip-api"
+      - "traefik.http.routers.backend-api.entrypoints=web"
+      - "traefik.http.routers.backend-api.service=backend"
+    develop:
+      watch:
+        - action: rebuild
+          path: ./backend/src
+        - action: rebuild
+          path: ./backend/Cargo.toml
+        - action: rebuild
+          path: ./backend/Cargo.lock
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: dev
     container_name: llm-gateway-frontend
-    ports:
-      - "80:80"
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://inferxgate.localhost/api}
     depends_on:
       - backend
     networks:
       - llm-gateway-network
-    restart: unless-stopped
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
-          "http://localhost",
-        ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`inferxgate.localhost`) && PathPrefix(`/`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend.priority=1"
+      - "traefik.http.services.frontend.loadbalancer.server.port=5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+          ignore:
+            - node_modules/
+        - action: sync
+          path: ./frontend/public
+          target: /app/public
+        - action: sync
+          path: ./frontend/index.html
+          target: /app/index.html
+        - action: rebuild
+          path: ./frontend/package.json
+        - action: rebuild
+          path: ./frontend/vite.config.ts
+        - action: rebuild
+          path: ./frontend/tsconfig.json
 
   redis:
     image: redis:7-alpine
     container_name: llm-gateway-redis
-    ports:
-      - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
       - llm-gateway-network
-    restart: unless-stopped
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   postgres:
     image: postgres:18-alpine
     container_name: llm-gateway-postgres
-    # set shared memory limit when using docker compose
     shm_size: 128mb
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-inferxgate}
@@ -89,12 +132,11 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - llm-gateway-network
-    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inferxgate}"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 networks:
   llm-gateway-network:
