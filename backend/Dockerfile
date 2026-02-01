@@ -1,4 +1,41 @@
-# Build stage
+# =============================================================================
+# Development stage - with cargo-watch for hot reloading
+# =============================================================================
+FROM rust:1.91-slim-trixie AS dev
+
+WORKDIR /app
+
+# Install dependencies for building and development
+RUN apt-get update && apt-get install -y \
+  pkg-config \
+  libssl-dev \
+  curl \
+  && rm -rf /var/lib/apt/lists/*
+
+# Install cargo-watch for hot reloading
+RUN cargo install cargo-watch
+
+# Copy manifests first for better layer caching
+COPY Cargo.toml Cargo.lock ./
+
+# Create a dummy src to pre-build dependencies
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+
+# Build dependencies only (this layer will be cached)
+RUN cargo build && rm -rf src target/debug/inferxgate target/debug/deps/inferxgate-*
+
+# Copy source code
+COPY src ./src
+
+# Expose port
+EXPOSE 3000
+
+# Run with cargo-watch for hot reloading
+CMD ["cargo", "watch", "-x", "run"]
+
+# =============================================================================
+# Build stage - compile release binary
+# =============================================================================
 FROM rust:1.91-slim-trixie AS builder
 
 WORKDIR /app
@@ -18,8 +55,10 @@ COPY src ./src
 # Build for release
 RUN cargo build --release
 
-# Runtime stage
-FROM debian:trixie-slim
+# =============================================================================
+# Production stage - minimal runtime image
+# =============================================================================
+FROM debian:trixie-slim AS prod
 
 WORKDIR /app
 
@@ -27,6 +66,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
   ca-certificates \
   libssl3 \
+  curl \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
