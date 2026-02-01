@@ -29,6 +29,7 @@ services:
       - HOST=0.0.0.0
       - PORT=3000
       - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - RUST_LOG=${RUST_LOG:-info}
       - RUST_BACKTRACE=1
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
@@ -49,14 +50,17 @@ services:
       - llm-gateway-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`inferxgate.localhost`) && (PathPrefix(`/api`) || PathPrefix(`/v1`) || PathPrefix(`/health`))"
-      - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
-      - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
+      # /api/* -> strip /api prefix -> backend (e.g. /api/auth/me -> /auth/me)
       - "traefik.http.routers.backend-api.rule=Host(`inferxgate.localhost`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.backend-api.middlewares=strip-api"
       - "traefik.http.routers.backend-api.entrypoints=web"
+      - "traefik.http.routers.backend-api.middlewares=strip-api"
       - "traefik.http.routers.backend-api.service=backend"
+      - "traefik.http.middlewares.strip-api.stripprefix.prefixes=/api"
+      # /v1/*, /health, /metrics, /stats -> backend directly (no prefix stripping)
+      - "traefik.http.routers.backend-direct.rule=Host(`inferxgate.localhost`) && (PathPrefix(`/v1`) || PathPrefix(`/health`) || PathPrefix(`/metrics`) || PathPrefix(`/stats`))"
+      - "traefik.http.routers.backend-direct.entrypoints=web"
+      - "traefik.http.routers.backend-direct.service=backend"
     develop:
       watch:
         - action: rebuild

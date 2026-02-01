@@ -18,11 +18,11 @@ RUN cargo install cargo-watch
 # Copy manifests first for better layer caching
 COPY Cargo.toml Cargo.lock ./
 
-# Create a dummy src to build dependencies
+# Create a dummy src to pre-build dependencies
 RUN mkdir src && echo "fn main() {}" > src/main.rs
 
 # Build dependencies only (this layer will be cached)
-RUN cargo build && rm -rf src
+RUN cargo build && rm -rf src target/debug/inferxgate target/debug/deps/inferxgate-*
 
 # Copy source code
 COPY src ./src
@@ -70,7 +70,7 @@ RUN apt-get update && apt-get install -y \
   && rm -rf /var/lib/apt/lists/*
 
 # Copy the binary from builder
-COPY --from=builder /app/target/release/llm-gateway /app/llm-gateway
+COPY --from=builder /app/target/release/inferxgate /app/inferxgate
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -84,4 +84,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # Run the binary
-CMD ["./llm-gateway"]
+CMD ["./inferxgate"]

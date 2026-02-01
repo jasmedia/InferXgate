@@ -98,7 +98,10 @@ docker-watch:
 	@echo ""
 	@echo "File changes will be automatically synced/rebuilt."
 	@echo "Press Ctrl+C to stop."
-	docker compose watch
+	@docker compose watch; \
+	echo ""; \
+	echo "Stopping Docker services..."; \
+	docker compose down
 
 docker-down:
 	@echo "Stopping Docker services..."
