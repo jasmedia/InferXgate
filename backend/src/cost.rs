@@ -18,6 +18,13 @@ impl CostCalculator {
 
         // Anthropic Claude pricing (per 1M tokens)
         pricing.insert(
+            "claude-opus-4-5-20251101".to_string(),
+            ModelPricing {
+                input_price_per_million: 15.0,
+                output_price_per_million: 75.0,
+            },
+        );
+        pricing.insert(
             "claude-sonnet-4-5-20250929".to_string(),
             ModelPricing {
                 input_price_per_million: 3.0,
@@ -69,24 +76,38 @@ impl CostCalculator {
 
         // Google Gemini pricing (per 1M tokens)
         pricing.insert(
-            "gemini-1.5-pro".to_string(),
+            "gemini-3-pro-preview".to_string(),
             ModelPricing {
                 input_price_per_million: 1.25,
                 output_price_per_million: 5.0,
             },
         );
         pricing.insert(
-            "gemini-1.5-flash".to_string(),
+            "gemini-2.5-pro".to_string(),
+            ModelPricing {
+                input_price_per_million: 1.25,
+                output_price_per_million: 5.0,
+            },
+        );
+        pricing.insert(
+            "gemini-2.5-flash".to_string(),
             ModelPricing {
                 input_price_per_million: 0.075,
                 output_price_per_million: 0.3,
             },
         );
         pricing.insert(
-            "gemini-1.0-pro".to_string(),
+            "gemini-2.5-flash-lite".to_string(),
             ModelPricing {
-                input_price_per_million: 0.5,
-                output_price_per_million: 1.5,
+                input_price_per_million: 0.075,
+                output_price_per_million: 0.3,
+            },
+        );
+        pricing.insert(
+            "gemini-2.0-flash".to_string(),
+            ModelPricing {
+                input_price_per_million: 0.1,
+                output_price_per_million: 0.4,
             },
         );
 
@@ -197,8 +218,8 @@ mod tests {
         let expected_cost = (1000.0 / 1_000_000.0) * 3.0 + (500.0 / 1_000_000.0) * 15.0;
         assert!((cost - expected_cost).abs() < 0.00001);
 
-        // Test Gemini 1.5 Flash: $0.075/1M input, $0.3/1M output
-        let cost = calculator.calculate_cost("gemini-1.5-flash", 10000, 5000);
+        // Test Gemini 2.5 Flash: $0.075/1M input, $0.3/1M output
+        let cost = calculator.calculate_cost("gemini-2.5-flash", 10000, 5000);
         let expected_cost = (10000.0 / 1_000_000.0) * 0.075 + (5000.0 / 1_000_000.0) * 0.3;
         assert!((cost - expected_cost).abs() < 0.00001);
     }

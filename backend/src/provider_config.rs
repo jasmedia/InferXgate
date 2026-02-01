@@ -13,19 +13,20 @@ pub mod anthropic {
 
     /// Primary models used for routing (subset of all supported)
     pub const PRIMARY_MODELS: &[&str] = &[
+        "claude-opus-4-5-20251101",
         "claude-sonnet-4-5-20250929",
         "claude-haiku-4-5-20251001",
-        "claude-opus-4-1-20250805",
         "claude-3-haiku-20240307",
     ];
 
     /// All supported Anthropic models
     pub const SUPPORTED_MODELS: &[&str] = &[
-        // Latest models (Claude 4.x)
+        // Latest models (Claude 4.5)
+        "claude-opus-4-5-20251101",   // Latest Opus - Most capable
         "claude-sonnet-4-5-20250929", // Latest Sonnet - Best balance
         "claude-haiku-4-5-20251001",  // Latest Haiku - Fastest
         // Claude 4.1 models
-        "claude-opus-4-1-20250805", // Latest Opus - Most capable
+        "claude-opus-4-1-20250805", // Opus 4.1
         // Claude 4.0 models (First generation Claude 4)
         "claude-sonnet-4-20250514", // Original Claude 4 Sonnet
         "claude-opus-4-20250514",   // Original Claude 4 Opus
@@ -46,12 +47,11 @@ pub mod gemini {
 
     /// Primary models used for routing (subset of all supported)
     pub const PRIMARY_MODELS: &[&str] = &[
+        "gemini-3-pro-preview",
         "gemini-2.5-pro",
         "gemini-2.5-flash",
         "gemini-2.5-flash-lite",
-        "gemini-2.5-flash-image",
         "gemini-2.0-flash",
-        "gemini-2.0-flash-lite",
     ];
 
     /// All supported Gemini models
