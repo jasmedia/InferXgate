@@ -116,8 +116,39 @@ const Playground: React.FC = () => {
       setConversation((prev) => [...prev, assistantMessage]);
       setMessage("");
     },
-    onError: (error) => {
-      toast.error("Failed to send message");
+    onError: (error: unknown) => {
+      let detail = "Unknown error";
+      if (error && typeof error === "object" && "response" in error) {
+        const res = (
+          error as {
+            response?: {
+              data?: {
+                error?: { message?: string; type?: string } | string;
+                message?: string;
+              };
+              status?: number;
+            };
+          }
+        ).response;
+        const errField = res?.data?.error;
+        if (typeof errField === "string") {
+          detail = errField;
+        } else if (
+          errField &&
+          typeof errField === "object" &&
+          errField.message
+        ) {
+          // Clean up provider errors that embed raw JSON in the message
+          const msg = errField.message;
+          const jsonIdx = msg.indexOf(" - {");
+          detail = jsonIdx > 0 ? msg.substring(0, jsonIdx) : msg;
+        } else {
+          detail = res?.data?.message || `HTTP ${res?.status}`;
+        }
+      } else if (error instanceof Error) {
+        detail = error.message;
+      }
+      toast.error(detail);
       console.error(error);
     },
   });
