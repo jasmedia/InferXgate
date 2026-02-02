@@ -291,7 +291,7 @@ for chunk in stream:
 ### Project Structure
 
 ```
-llm-gateway/
+inferxgate/
 ├── backend/
 │   ├── src/
 │   │   ├── main.rs           # Main server entry point
@@ -353,15 +353,15 @@ docker-compose up -d
 Backend:
 ```bash
 cd backend
-docker build -t llm-gateway-backend .
-docker run -p 3000:3000 --env-file .env llm-gateway-backend
+docker build -t inferxgate-backend .
+docker run -p 3000:3000 --env-file .env inferxgate-backend
 ```
 
 Frontend:
 ```bash
 cd frontend
-docker build -t llm-gateway-frontend .
-docker run -p 80:80 llm-gateway-frontend
+docker build -t inferxgate-frontend .
+docker run -p 80:80 inferxgate-frontend
 ```
 
 ## Available Make Commands

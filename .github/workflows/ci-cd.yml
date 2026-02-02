@@ -105,10 +105,10 @@ jobs:
           context: ./backend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/llm-gateway-backend:latest
-            ${{ secrets.DOCKER_USERNAME }}/llm-gateway-backend:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/llm-gateway-backend:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/llm-gateway-backend:buildcache,mode=max
+            ${{ secrets.DOCKER_USERNAME }}/inferxgate-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/inferxgate-backend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/inferxgate-backend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/inferxgate-backend:buildcache,mode=max
 
       - name: Build and push frontend
         uses: docker/build-push-action@v4
@@ -116,10 +116,10 @@ jobs:
           context: ./frontend
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/llm-gateway-frontend:latest
-            ${{ secrets.DOCKER_USERNAME }}/llm-gateway-frontend:${{ github.sha }}
-          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/llm-gateway-frontend:buildcache
-          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/llm-gateway-frontend:buildcache,mode=max
+            ${{ secrets.DOCKER_USERNAME }}/inferxgate-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/inferxgate-frontend:${{ github.sha }}
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/inferxgate-frontend:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/inferxgate-frontend:buildcache,mode=max
 
   # Security scanning
   security:
