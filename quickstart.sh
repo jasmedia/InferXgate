@@ -98,7 +98,7 @@ case $choice in
 
         echo -e "${GREEN}✅ Build complete!${NC}"
         echo "To run: "
-        echo "  Backend: ./backend/target/release/llm-gateway"
+        echo "  Backend: ./backend/target/release/inferxgate"
         echo "  Frontend: cd frontend && bun run preview"
         ;;
 

@@ -743,7 +743,7 @@ async fn list_models(State(state): State<Arc<AppState>>) -> ApiResult<Json<serde
             serde_json::json!({
                 "id": entry.key(),
                 "object": "model",
-                "owned_by": "llm-gateway",
+                "owned_by": "inferxgate",
                 "permission": []
             })
         })

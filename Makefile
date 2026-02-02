@@ -55,7 +55,7 @@ build-frontend:
 run:
 	@echo "Starting production servers..."
 	@trap 'kill 0' SIGINT; \
-	(cd backend && ./target/release/llm-gateway) & \
+	(cd backend && ./target/release/inferxgate) & \
 	(cd frontend && bun run preview) & \
 	wait
 

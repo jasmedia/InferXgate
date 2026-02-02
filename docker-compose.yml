@@ -1,7 +1,7 @@
 services:
   traefik:
     image: traefik:v3.2
-    container_name: llm-gateway-traefik
+    container_name: inferxgate-traefik
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -13,7 +13,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.traefik.rule=Host(`traefik.inferxgate.localhost`)"
@@ -24,7 +24,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
-    container_name: llm-gateway-backend
+    container_name: inferxgate-backend
     environment:
       - HOST=0.0.0.0
       - PORT=3000
@@ -47,7 +47,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
@@ -75,13 +75,13 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
-    container_name: llm-gateway-frontend
+    container_name: inferxgate-frontend
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://inferxgate.localhost/api}
     depends_on:
       - backend
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`inferxgate.localhost`) && PathPrefix(`/`)"
@@ -110,11 +110,11 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: llm-gateway-redis
+    container_name: inferxgate-redis
     volumes:
       - redis-data:/data
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     command: redis-server --appendonly yes
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -124,7 +124,7 @@ services:
 
   postgres:
     image: postgres:18-alpine
-    container_name: llm-gateway-postgres
+    container_name: inferxgate-postgres
     shm_size: 128mb
     environment:
       - POSTGRES_USER=${POSTGRES_USER:-inferxgate}
@@ -135,7 +135,7 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - llm-gateway-network
+      - inferxgate-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-inferxgate}"]
       interval: 5s
@@ -143,7 +143,7 @@ services:
       retries: 5
 
 networks:
-  llm-gateway-network:
+  inferxgate-network:
     driver: bridge
 
 volumes:

@@ -133,7 +133,7 @@ impl OAuthProvider for GitHubOAuthProvider {
             .http_client
             .get(GITHUB_USER_API_URL)
             .header("Authorization", format!("Bearer {}", access_token))
-            .header("User-Agent", "llm-gateway")
+            .header("User-Agent", "inferxgate")
             .send()
             .await
             .map_err(|e| ApiError::ExternalApiError(format!("Failed to get user info: {}", e)))?;
@@ -160,7 +160,7 @@ impl OAuthProvider for GitHubOAuthProvider {
                 .http_client
                 .get("https://api.github.com/user/emails")
                 .header("Authorization", format!("Bearer {}", access_token))
-                .header("User-Agent", "llm-gateway")
+                .header("User-Agent", "inferxgate")
                 .send()
                 .await
                 .map_err(|e| {

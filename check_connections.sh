@@ -96,7 +96,7 @@ else
     echo ""
     echo "2. Start individual containers:"
     if [ $REDIS_OK -eq 0 ]; then
-        echo "   docker run -d -p 6379:6379 --name llm-gateway-redis redis:7-alpine"
+        echo "   docker run -d -p 6379:6379 --name inferxgate-redis redis:7-alpine"
     fi
     if [ $PG_OK -eq 0 ]; then
         echo "   docker run -d -p 5432:5432 --name inferxgate-postgres \\"
