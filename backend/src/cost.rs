@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use tracing::error;
 
 /// Cost calculator for different LLM models
 /// Prices are per 1M tokens (as of 2025)
@@ -155,7 +156,12 @@ impl CostCalculator {
         let pricing = match self.pricing.get(model) {
             Some(p) => p,
             None => {
-                // Return default pricing if model not found
+                error!(
+                    model = %model,
+                    prompt_tokens,
+                    completion_tokens,
+                    "No pricing entry for model; falling back to default. Billing will be inaccurate — add this model to CostCalculator::new()."
+                );
                 return self.calculate_default_cost(prompt_tokens, completion_tokens);
             }
         };
@@ -222,6 +228,7 @@ impl Default for CostCalculator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::provider_config;
 
     #[test]
     fn test_cost_calculation() {
@@ -239,16 +246,57 @@ mod tests {
     }
 
     #[test]
+    fn test_new_anthropic_model_pricing() {
+        let calculator = CostCalculator::new();
+
+        let opus_47 = calculator
+            .get_model_pricing("claude-opus-4-7")
+            .expect("claude-opus-4-7 must have pricing");
+        assert_eq!(opus_47.input_price_per_million, 15.0);
+        assert_eq!(opus_47.output_price_per_million, 75.0);
+
+        let sonnet_46 = calculator
+            .get_model_pricing("claude-sonnet-4-6")
+            .expect("claude-sonnet-4-6 must have pricing");
+        assert_eq!(sonnet_46.input_price_per_million, 3.0);
+        assert_eq!(sonnet_46.output_price_per_million, 15.0);
+    }
+
+    #[test]
+    fn test_primary_models_are_supported() {
+        for provider in ["anthropic", "gemini", "openai", "azure"] {
+            let primary = provider_config::get_primary_models(provider);
+            let supported = provider_config::get_supported_models(provider);
+            for model in primary {
+                assert!(
+                    supported.iter().any(|s| s == model),
+                    "{provider} PRIMARY model {model} is not in SUPPORTED_MODELS"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_primary_models_have_pricing() {
+        // Scoped to providers with complete pricing tables; OpenAI/Azure
+        // have pre-existing gaps tracked separately.
+        let calculator = CostCalculator::new();
+        for provider in ["anthropic", "gemini"] {
+            for model in provider_config::get_primary_models(provider) {
+                assert!(
+                    calculator.get_model_pricing(model).is_some(),
+                    "{provider} primary model {model} has no pricing entry in CostCalculator"
+                );
+            }
+        }
+    }
+
+    #[test]
     fn test_cheaper_alternative() {
         let calculator = CostCalculator::new();
 
         // Claude Opus is expensive, should suggest cheaper alternatives
         let alternative = calculator.suggest_cheaper_alternative("claude-3-opus-20240229");
         assert!(alternative.is_some());
-
-        // Gemini Flash is already cheap, might not have alternatives
-        let alternative = calculator.suggest_cheaper_alternative("gemini-1.5-flash");
-        // This might be None or a very cheap model
-        println!("Cheaper than Gemini Flash: {:?}", alternative);
     }
 }

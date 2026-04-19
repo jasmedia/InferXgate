@@ -21,24 +21,21 @@ pub mod anthropic {
         "claude-3-haiku-20240307",
     ];
 
-    /// All supported Anthropic models
+    /// All supported Anthropic models.
+    ///
+    /// Unsuffixed IDs (e.g. `claude-opus-4-7`) are Anthropic aliases that resolve
+    /// to the latest dated release for that line. Dated IDs pin a specific version.
     pub const SUPPORTED_MODELS: &[&str] = &[
-        // Latest models (Claude 4.7 / 4.6)
-        "claude-opus-4-7",   // Latest Opus - Most capable
-        "claude-sonnet-4-6", // Latest Sonnet - Best balance
-        // Claude 4.5 models
-        "claude-opus-4-5-20251101",   // Opus 4.5
-        "claude-sonnet-4-5-20250929", // Sonnet 4.5
-        "claude-haiku-4-5-20251001",  // Haiku 4.5 - Fastest
-        // Claude 4.1 models
-        "claude-opus-4-1-20250805", // Opus 4.1
-        // Claude 4.0 models (First generation Claude 4)
-        "claude-sonnet-4-20250514", // Original Claude 4 Sonnet
-        "claude-opus-4-20250514",   // Original Claude 4 Opus
-        // Claude 3.5 models (Active)
-        "claude-3-5-haiku-20241022", // Claude 3.5 Haiku
-        // Claude 3 models (Legacy - only Haiku 3 still fully supported)
-        "claude-3-haiku-20240307", // Original Claude 3 Haiku
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+        "claude-opus-4-5-20251101",
+        "claude-sonnet-4-5-20250929",
+        "claude-haiku-4-5-20251001",
+        "claude-opus-4-1-20250805",
+        "claude-sonnet-4-20250514",
+        "claude-opus-4-20250514",
+        "claude-3-5-haiku-20241022",
+        "claude-3-haiku-20240307",
     ];
 }
 

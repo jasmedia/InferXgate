@@ -2,11 +2,26 @@ import type React from "react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
+const DEFAULT_MODEL_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: "claude-opus-4-7", label: "Claude Opus 4.7" },
+  { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+  { value: "claude-opus-4-5-20251101", label: "Claude Opus 4.5" },
+  { value: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
+  { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
+  { value: "gemini-3-pro-preview", label: "Gemini 3 Pro" },
+  { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+  { value: "gpt-5", label: "GPT-5" },
+  { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+];
+
+const FALLBACK_DEFAULT_MODEL = "claude-sonnet-4-6";
+
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
     general: {
       gatewayName: "InferXgate",
-      defaultModel: "claude-sonnet-4-6",
+      defaultModel: FALLBACK_DEFAULT_MODEL,
       timeout: 30,
       retryAttempts: 3,
     },
@@ -88,7 +103,13 @@ const Settings: React.FC = () => {
               </label>
               <select
                 id="default-model"
-                value={settings.general.defaultModel}
+                value={
+                  DEFAULT_MODEL_OPTIONS.some(
+                    (o) => o.value === settings.general.defaultModel,
+                  )
+                    ? settings.general.defaultModel
+                    : FALLBACK_DEFAULT_MODEL
+                }
                 onChange={(e) =>
                   setSettings({
                     ...settings,
@@ -100,22 +121,11 @@ const Settings: React.FC = () => {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="claude-opus-4-7">Claude Opus 4.7</option>
-                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
-                <option value="claude-opus-4-5-20251101">
-                  Claude Opus 4.5
-                </option>
-                <option value="claude-sonnet-4-5-20250929">
-                  Claude Sonnet 4.5
-                </option>
-                <option value="claude-haiku-4-5-20251001">
-                  Claude Haiku 4.5
-                </option>
-                <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gpt-5">GPT-5</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                {DEFAULT_MODEL_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
