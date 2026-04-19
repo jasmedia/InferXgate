@@ -1,10 +1,12 @@
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-const DEFAULT_MODEL_OPTIONS: Array<{ value: string; label: string }> = [
+type ModelOption = { value: string; label: string; isDefault?: boolean };
+
+const DEFAULT_MODEL_OPTIONS: ModelOption[] = [
   { value: "claude-opus-4-7", label: "Claude Opus 4.7" },
-  { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+  { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6", isDefault: true },
   { value: "claude-opus-4-5-20251101", label: "Claude Opus 4.5" },
   { value: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
   { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
@@ -15,7 +17,12 @@ const DEFAULT_MODEL_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
 ];
 
-const FALLBACK_DEFAULT_MODEL = "claude-sonnet-4-6";
+const FALLBACK_DEFAULT_MODEL =
+  DEFAULT_MODEL_OPTIONS.find((o) => o.isDefault)?.value ??
+  DEFAULT_MODEL_OPTIONS[0].value;
+
+const isKnownModel = (value: string) =>
+  DEFAULT_MODEL_OPTIONS.some((o) => o.value === value);
 
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
@@ -50,6 +57,22 @@ const Settings: React.FC = () => {
       ipAddresses: "",
     },
   });
+
+  // Reconcile the persisted default model with the options actually available.
+  // Without this, a stale/unknown value stays in state and gets re-persisted on
+  // Save even though the <select> displays the fallback.
+  useEffect(() => {
+    const current = settings.general.defaultModel;
+    if (!isKnownModel(current)) {
+      setSettings((prev) => ({
+        ...prev,
+        general: { ...prev.general, defaultModel: FALLBACK_DEFAULT_MODEL },
+      }));
+      toast.error(
+        `Previously selected model "${current}" is no longer available — defaulting to ${FALLBACK_DEFAULT_MODEL}`,
+      );
+    }
+  }, [settings.general.defaultModel]);
 
   const handleSave = (section: string) => {
     toast.success(`${section} settings saved successfully`);
@@ -104,9 +127,7 @@ const Settings: React.FC = () => {
               <select
                 id="default-model"
                 value={
-                  DEFAULT_MODEL_OPTIONS.some(
-                    (o) => o.value === settings.general.defaultModel,
-                  )
+                  isKnownModel(settings.general.defaultModel)
                     ? settings.general.defaultModel
                     : FALLBACK_DEFAULT_MODEL
                 }

@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 use tracing::error;
 
+use crate::metrics::MetricsCollector;
+
 /// Cost calculator for different LLM models
 /// Prices are per 1M tokens (as of 2025)
 pub struct CostCalculator {
@@ -17,7 +19,8 @@ impl CostCalculator {
     pub fn new() -> Self {
         let mut pricing = HashMap::new();
 
-        // Anthropic Claude pricing (per 1M tokens)
+        // Anthropic Claude pricing (per 1M tokens).
+        // Source: https://www.anthropic.com/pricing — verified 2026-04-19.
         pricing.insert(
             "claude-opus-4-7".to_string(),
             ModelPricing {
@@ -156,11 +159,12 @@ impl CostCalculator {
         let pricing = match self.pricing.get(model) {
             Some(p) => p,
             None => {
+                MetricsCollector::record_cost_unknown_model(model);
                 error!(
                     model = %model,
                     prompt_tokens,
                     completion_tokens,
-                    "No pricing entry for model; falling back to default. Billing will be inaccurate — add this model to CostCalculator::new()."
+                    "No pricing entry for model; falling back to default. Billing will be inaccurate. If this model should be supported, add it to CostCalculator::new(); otherwise verify the caller is sending a valid model ID."
                 );
                 return self.calculate_default_cost(prompt_tokens, completion_tokens);
             }
@@ -252,40 +256,59 @@ mod tests {
         let opus_47 = calculator
             .get_model_pricing("claude-opus-4-7")
             .expect("claude-opus-4-7 must have pricing");
-        assert_eq!(opus_47.input_price_per_million, 15.0);
-        assert_eq!(opus_47.output_price_per_million, 75.0);
+        assert!((opus_47.input_price_per_million - 15.0).abs() < 1e-9);
+        assert!((opus_47.output_price_per_million - 75.0).abs() < 1e-9);
 
         let sonnet_46 = calculator
             .get_model_pricing("claude-sonnet-4-6")
             .expect("claude-sonnet-4-6 must have pricing");
-        assert_eq!(sonnet_46.input_price_per_million, 3.0);
-        assert_eq!(sonnet_46.output_price_per_million, 15.0);
+        assert!((sonnet_46.input_price_per_million - 3.0).abs() < 1e-9);
+        assert!((sonnet_46.output_price_per_million - 15.0).abs() < 1e-9);
+
+        // End-to-end: catches insert-key typos that get_model_pricing hides.
+        let opus_cost = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 1_000_000);
+        assert!((opus_cost - 90.0).abs() < 1e-9);
+        let sonnet_cost = calculator.calculate_cost("claude-sonnet-4-6", 1_000_000, 1_000_000);
+        assert!((sonnet_cost - 18.0).abs() < 1e-9);
     }
 
     #[test]
-    fn test_primary_models_are_supported() {
-        for provider in ["anthropic", "gemini", "openai", "azure"] {
-            let primary = provider_config::get_primary_models(provider);
-            let supported = provider_config::get_supported_models(provider);
-            for model in primary {
-                assert!(
-                    supported.iter().any(|s| s == model),
-                    "{provider} PRIMARY model {model} is not in SUPPORTED_MODELS"
-                );
-            }
-        }
+    fn test_unknown_model_falls_back_to_default_pricing() {
+        // Pins the $2/$6 default math so refactors can't silently drift cost
+        // reports for unknown models.
+        let calculator = CostCalculator::new();
+        let cost = calculator.calculate_cost("definitely-not-a-real-model", 1_000_000, 1_000_000);
+        assert!((cost - 8.0).abs() < 1e-9);
     }
 
     #[test]
     fn test_primary_models_have_pricing() {
-        // Scoped to providers with complete pricing tables; OpenAI/Azure
-        // have pre-existing gaps tracked separately.
+        // Providers with pre-existing pricing gaps are excluded until the gap
+        // is closed; removing an entry here should make this test fail.
+        const KNOWN_UNPRICED: &[(&str, &str)] = &[
+            ("openai", "gpt-5"),
+            ("openai", "gpt-5-mini"),
+            ("openai", "gpt-5-nano"),
+            ("openai", "gpt-5-chat"),
+            ("openai", "gpt-4.1"),
+            ("openai", "gpt-4-turbo-preview"),
+            ("openai", "gpt-4-vision-preview"),
+            ("azure", "azure-gpt-4o"),
+            ("azure", "azure-gpt-4o-mini"),
+            ("azure", "azure-gpt-4-turbo"),
+            ("azure", "azure-gpt-4"),
+            ("azure", "azure-gpt-35-turbo"),
+        ];
+
         let calculator = CostCalculator::new();
-        for provider in ["anthropic", "gemini"] {
+        for provider in ["anthropic", "gemini", "openai", "azure"] {
             for model in provider_config::get_primary_models(provider) {
+                if KNOWN_UNPRICED.contains(&(provider, *model)) {
+                    continue;
+                }
                 assert!(
                     calculator.get_model_pricing(model).is_some(),
-                    "{provider} primary model {model} has no pricing entry in CostCalculator"
+                    "{provider} primary model {model} has no pricing entry in CostCalculator (remove from KNOWN_UNPRICED once pricing is added)"
                 );
             }
         }

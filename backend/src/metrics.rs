@@ -76,6 +76,15 @@ lazy_static! {
         &["key_id", "limit_type"]
     )
     .unwrap();
+
+    // Cost accuracy: requests billed against the default fallback because the
+    // model is missing from CostCalculator's pricing table.
+    pub static ref COST_UNKNOWN_MODEL: CounterVec = register_counter_vec!(
+        "llm_gateway_cost_unknown_model_total",
+        "Cost calculations that fell back to default pricing due to an unknown model",
+        &["model"]
+    )
+    .unwrap();
 }
 
 pub struct MetricsCollector;
@@ -101,6 +110,10 @@ impl MetricsCollector {
         COST_COUNTER
             .with_label_values(&[model, provider])
             .inc_by(cost_usd);
+    }
+
+    pub fn record_cost_unknown_model(model: &str) {
+        COST_UNKNOWN_MODEL.with_label_values(&[model]).inc();
     }
 
     pub fn record_cache_hit() {
