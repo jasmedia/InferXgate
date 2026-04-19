@@ -6,7 +6,7 @@ const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
     general: {
       gatewayName: "InferXgate",
-      defaultModel: "claude-sonnet-4-5-20250929",
+      defaultModel: "claude-sonnet-4-6",
       timeout: 30,
       retryAttempts: 3,
     },
@@ -100,6 +100,8 @@ const Settings: React.FC = () => {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="claude-opus-4-7">Claude Opus 4.7</option>
+                <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
                 <option value="claude-opus-4-5-20251101">
                   Claude Opus 4.5
                 </option>

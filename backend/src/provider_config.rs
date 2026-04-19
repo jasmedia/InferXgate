@@ -13,18 +13,23 @@ pub mod anthropic {
 
     /// Primary models used for routing (subset of all supported)
     pub const PRIMARY_MODELS: &[&str] = &[
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+        "claude-haiku-4-5-20251001",
         "claude-opus-4-5-20251101",
         "claude-sonnet-4-5-20250929",
-        "claude-haiku-4-5-20251001",
         "claude-3-haiku-20240307",
     ];
 
     /// All supported Anthropic models
     pub const SUPPORTED_MODELS: &[&str] = &[
-        // Latest models (Claude 4.5)
-        "claude-opus-4-5-20251101",   // Latest Opus - Most capable
-        "claude-sonnet-4-5-20250929", // Latest Sonnet - Best balance
-        "claude-haiku-4-5-20251001",  // Latest Haiku - Fastest
+        // Latest models (Claude 4.7 / 4.6)
+        "claude-opus-4-7",   // Latest Opus - Most capable
+        "claude-sonnet-4-6", // Latest Sonnet - Best balance
+        // Claude 4.5 models
+        "claude-opus-4-5-20251101",   // Opus 4.5
+        "claude-sonnet-4-5-20250929", // Sonnet 4.5
+        "claude-haiku-4-5-20251001",  // Haiku 4.5 - Fastest
         // Claude 4.1 models
         "claude-opus-4-1-20250805", // Opus 4.1
         // Claude 4.0 models (First generation Claude 4)

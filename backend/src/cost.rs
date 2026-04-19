@@ -18,6 +18,20 @@ impl CostCalculator {
 
         // Anthropic Claude pricing (per 1M tokens)
         pricing.insert(
+            "claude-opus-4-7".to_string(),
+            ModelPricing {
+                input_price_per_million: 15.0,
+                output_price_per_million: 75.0,
+            },
+        );
+        pricing.insert(
+            "claude-sonnet-4-6".to_string(),
+            ModelPricing {
+                input_price_per_million: 3.0,
+                output_price_per_million: 15.0,
+            },
+        );
+        pricing.insert(
             "claude-opus-4-5-20251101".to_string(),
             ModelPricing {
                 input_price_per_million: 15.0,
