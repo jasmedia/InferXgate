@@ -12,7 +12,8 @@ pub mod anthropic {
     pub const ENDPOINT: &str = "https://api.anthropic.com";
 
     /// Primary models used for routing (subset of all supported).
-    /// Ordered by capability tier: Opus > Sonnet > Haiku.
+    /// Ordered by generation (newest first), then by capability tier within a
+    /// generation (Opus > Sonnet > Haiku).
     pub const PRIMARY_MODELS: &[&str] = &[
         "claude-opus-4-7",
         "claude-sonnet-4-6",

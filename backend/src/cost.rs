@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use tracing::error;
+use tracing::warn;
 
 use crate::metrics::MetricsCollector;
 
-/// Cost calculator for different LLM models
-/// Prices are per 1M tokens (as of 2025)
+/// Cost calculator for different LLM models.
+/// Prices are per 1M tokens; see each entry's Source comment for verification dates.
 pub struct CostCalculator {
     pricing: HashMap<String, ModelPricing>,
 }
@@ -20,7 +20,9 @@ impl CostCalculator {
         let mut pricing = HashMap::new();
 
         // Anthropic Claude pricing (per 1M tokens).
-        // Source: https://www.anthropic.com/pricing — verified 2026-04-19.
+        // The two entries below (claude-opus-4-7, claude-sonnet-4-6) verified
+        // 2026-04-19 against https://www.anthropic.com/pricing; earlier entries
+        // dated at their original insertion.
         pricing.insert(
             "claude-opus-4-7".to_string(),
             ModelPricing {
@@ -159,8 +161,8 @@ impl CostCalculator {
         let pricing = match self.pricing.get(model) {
             Some(p) => p,
             None => {
-                MetricsCollector::record_cost_unknown_model(model);
-                error!(
+                MetricsCollector::record_cost_unknown_model();
+                warn!(
                     model = %model,
                     prompt_tokens,
                     completion_tokens,
@@ -232,6 +234,7 @@ impl Default for CostCalculator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::metrics::COST_UNKNOWN_MODEL;
     use crate::provider_config;
 
     #[test]
@@ -265,27 +268,50 @@ mod tests {
         assert!((sonnet_46.input_price_per_million - 3.0).abs() < 1e-9);
         assert!((sonnet_46.output_price_per_million - 15.0).abs() < 1e-9);
 
-        // End-to-end: catches insert-key typos that get_model_pricing hides.
+        // Exercises the full calculate_cost path so a future refactor that
+        // normalizes the lookup key is caught here, not in production billing.
         let opus_cost = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 1_000_000);
         assert!((opus_cost - 90.0).abs() < 1e-9);
         let sonnet_cost = calculator.calculate_cost("claude-sonnet-4-6", 1_000_000, 1_000_000);
         assert!((sonnet_cost - 18.0).abs() < 1e-9);
+
+        // Asymmetric input/output to catch a swapped-column regression that
+        // symmetric 1M/1M totals would silently tolerate (15+75 == 75+15).
+        let opus_input_only = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 0);
+        assert!((opus_input_only - 15.0).abs() < 1e-9);
+        let opus_output_only = calculator.calculate_cost("claude-opus-4-7", 0, 1_000_000);
+        assert!((opus_output_only - 75.0).abs() < 1e-9);
     }
 
     #[test]
     fn test_unknown_model_falls_back_to_default_pricing() {
         // Pins the $2/$6 default math so refactors can't silently drift cost
-        // reports for unknown models.
+        // reports for unknown models, and asserts the COST_UNKNOWN_MODEL counter
+        // fires so ops alerting stays load-bearing across refactors.
         let calculator = CostCalculator::new();
+        let before = COST_UNKNOWN_MODEL.get();
         let cost = calculator.calculate_cost("definitely-not-a-real-model", 1_000_000, 1_000_000);
+        let after = COST_UNKNOWN_MODEL.get();
         assert!((cost - 8.0).abs() < 1e-9);
+        assert!(
+            after >= before + 1.0,
+            "COST_UNKNOWN_MODEL counter did not increment on unknown model"
+        );
     }
 
     #[test]
-    fn test_primary_models_have_pricing() {
+    fn test_supported_models_have_pricing() {
         // Providers with pre-existing pricing gaps are excluded until the gap
-        // is closed; removing an entry here should make this test fail.
+        // is closed. Each entry is double-checked: the inverse assertion below
+        // forces removal once pricing is added, so the allowlist cannot silently
+        // mask a *newly fixed* model.
         const KNOWN_UNPRICED: &[(&str, &str)] = &[
+            ("anthropic", "claude-sonnet-4-20250514"),
+            ("anthropic", "claude-opus-4-20250514"),
+            ("anthropic", "claude-3-5-haiku-20241022"),
+            ("gemini", "gemini-3-pro-image-preview"),
+            ("gemini", "gemini-2.5-flash-image"),
+            ("gemini", "gemini-2.0-flash-lite"),
             ("openai", "gpt-5"),
             ("openai", "gpt-5-mini"),
             ("openai", "gpt-5-nano"),
@@ -302,15 +328,25 @@ mod tests {
 
         let calculator = CostCalculator::new();
         for provider in ["anthropic", "gemini", "openai", "azure"] {
-            for model in provider_config::get_primary_models(provider) {
-                if KNOWN_UNPRICED.contains(&(provider, *model)) {
+            for model in provider_config::get_supported_models(provider) {
+                if KNOWN_UNPRICED.contains(&(provider, model.as_str())) {
                     continue;
                 }
                 assert!(
-                    calculator.get_model_pricing(model).is_some(),
-                    "{provider} primary model {model} has no pricing entry in CostCalculator (remove from KNOWN_UNPRICED once pricing is added)"
+                    calculator.get_model_pricing(&model).is_some(),
+                    "{provider} supported model {model} has no pricing entry in CostCalculator (remove from KNOWN_UNPRICED once pricing is added)"
                 );
             }
+        }
+
+        // Inverse check: once pricing is added for an entry, the corresponding
+        // KNOWN_UNPRICED row must be removed — otherwise the exclusion list
+        // silently keeps masking a gap that's already been closed.
+        for (provider, model) in KNOWN_UNPRICED {
+            assert!(
+                calculator.get_model_pricing(model).is_none(),
+                "{provider} model {model} now has pricing — remove it from KNOWN_UNPRICED"
+            );
         }
     }
 
