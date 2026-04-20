@@ -2,11 +2,35 @@ import type React from "react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
+type ModelOption = { value: string; label: string };
+
+// Lifting the default out of the row array makes "exactly one default" a
+// structural property — the shape can't represent zero or multiple defaults,
+// and the fallback can't silently drift to whatever sits at index 0.
+const MODEL_CATALOG = {
+  default: "claude-sonnet-4-6",
+  options: [
+    { value: "claude-opus-4-7", label: "Claude Opus 4.7" },
+    { value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" },
+    { value: "claude-opus-4-5-20251101", label: "Claude Opus 4.5" },
+    { value: "claude-sonnet-4-5-20250929", label: "Claude Sonnet 4.5" },
+    { value: "claude-haiku-4-5-20251001", label: "Claude Haiku 4.5" },
+    { value: "gemini-3-pro-preview", label: "Gemini 3 Pro" },
+    { value: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
+    { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+    { value: "gpt-5", label: "GPT-5" },
+    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+  ] as readonly ModelOption[],
+} as const;
+
+const DEFAULT_MODEL_OPTIONS = MODEL_CATALOG.options;
+const FALLBACK_DEFAULT_MODEL: string = MODEL_CATALOG.default;
+
 const Settings: React.FC = () => {
   const [settings, setSettings] = useState({
     general: {
       gatewayName: "InferXgate",
-      defaultModel: "claude-sonnet-4-5-20250929",
+      defaultModel: FALLBACK_DEFAULT_MODEL,
       timeout: 30,
       retryAttempts: 3,
     },
@@ -52,9 +76,7 @@ const Settings: React.FC = () => {
       <div className="space-y-6">
         {/* General Settings */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            General Settings
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">General Settings</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label
@@ -100,20 +122,11 @@ const Settings: React.FC = () => {
                 }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="claude-opus-4-5-20251101">
-                  Claude Opus 4.5
-                </option>
-                <option value="claude-sonnet-4-5-20250929">
-                  Claude Sonnet 4.5
-                </option>
-                <option value="claude-haiku-4-5-20251001">
-                  Claude Haiku 4.5
-                </option>
-                <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                <option value="gpt-5">GPT-5</option>
-                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                {DEFAULT_MODEL_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -174,9 +187,7 @@ const Settings: React.FC = () => {
 
         {/* Rate Limiting */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Rate Limiting
-          </h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Rate Limiting</h3>
           <div className="space-y-4">
             <div className="flex items-center">
               <input
@@ -194,10 +205,7 @@ const Settings: React.FC = () => {
                 }
                 className="mr-2"
               />
-              <label
-                htmlFor="rateLimitEnabled"
-                className="text-sm text-gray-700"
-              >
+              <label htmlFor="rateLimitEnabled" className="text-sm text-gray-700">
                 Enable Rate Limiting
               </label>
             </div>
@@ -371,10 +379,7 @@ const Settings: React.FC = () => {
                     }
                     className="mr-2"
                   />
-                  <label
-                    htmlFor="semanticCaching"
-                    className="text-sm text-gray-700"
-                  >
+                  <label htmlFor="semanticCaching" className="text-sm text-gray-700">
                     Enable Semantic Caching (Experimental)
                   </label>
                 </div>
@@ -395,10 +400,7 @@ const Settings: React.FC = () => {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Logging</h3>
           <div className="space-y-4">
             <div>
-              <label
-                htmlFor="log-level"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
+              <label htmlFor="log-level" className="block text-sm font-medium text-gray-700 mb-1">
                 Log Level
               </label>
               <select

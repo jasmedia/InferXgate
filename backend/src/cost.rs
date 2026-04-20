@@ -1,7 +1,10 @@
 use std::collections::HashMap;
+use tracing::warn;
 
-/// Cost calculator for different LLM models
-/// Prices are per 1M tokens (as of 2025)
+use crate::metrics::MetricsCollector;
+
+/// Cost calculator for different LLM models.
+/// Prices are per 1M tokens; see each entry's Source comment for verification dates.
 pub struct CostCalculator {
     pricing: HashMap<String, ModelPricing>,
 }
@@ -16,7 +19,24 @@ impl CostCalculator {
     pub fn new() -> Self {
         let mut pricing = HashMap::new();
 
-        // Anthropic Claude pricing (per 1M tokens)
+        // Anthropic Claude pricing (per 1M tokens).
+        // The two entries below (claude-opus-4-7, claude-sonnet-4-6) verified
+        // 2026-04-19 against https://www.anthropic.com/pricing; earlier entries
+        // dated at their original insertion.
+        pricing.insert(
+            "claude-opus-4-7".to_string(),
+            ModelPricing {
+                input_price_per_million: 15.0,
+                output_price_per_million: 75.0,
+            },
+        );
+        pricing.insert(
+            "claude-sonnet-4-6".to_string(),
+            ModelPricing {
+                input_price_per_million: 3.0,
+                output_price_per_million: 15.0,
+            },
+        );
         pricing.insert(
             "claude-opus-4-5-20251101".to_string(),
             ModelPricing {
@@ -141,7 +161,13 @@ impl CostCalculator {
         let pricing = match self.pricing.get(model) {
             Some(p) => p,
             None => {
-                // Return default pricing if model not found
+                MetricsCollector::record_cost_unknown_model();
+                warn!(
+                    model = %model,
+                    prompt_tokens,
+                    completion_tokens,
+                    "No pricing entry for model; falling back to default. Billing will be inaccurate. If this model should be supported, add it to CostCalculator::new(); otherwise verify the caller is sending a valid model ID."
+                );
                 return self.calculate_default_cost(prompt_tokens, completion_tokens);
             }
         };
@@ -208,6 +234,8 @@ impl Default for CostCalculator {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::metrics::COST_UNKNOWN_MODEL;
+    use crate::provider_config;
 
     #[test]
     fn test_cost_calculation() {
@@ -225,16 +253,109 @@ mod tests {
     }
 
     #[test]
+    fn test_new_anthropic_model_pricing() {
+        let calculator = CostCalculator::new();
+
+        let opus_47 = calculator
+            .get_model_pricing("claude-opus-4-7")
+            .expect("claude-opus-4-7 must have pricing");
+        assert!((opus_47.input_price_per_million - 15.0).abs() < 1e-9);
+        assert!((opus_47.output_price_per_million - 75.0).abs() < 1e-9);
+
+        let sonnet_46 = calculator
+            .get_model_pricing("claude-sonnet-4-6")
+            .expect("claude-sonnet-4-6 must have pricing");
+        assert!((sonnet_46.input_price_per_million - 3.0).abs() < 1e-9);
+        assert!((sonnet_46.output_price_per_million - 15.0).abs() < 1e-9);
+
+        // Exercises the full calculate_cost path so a future refactor that
+        // normalizes the lookup key is caught here, not in production billing.
+        let opus_cost = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 1_000_000);
+        assert!((opus_cost - 90.0).abs() < 1e-9);
+        let sonnet_cost = calculator.calculate_cost("claude-sonnet-4-6", 1_000_000, 1_000_000);
+        assert!((sonnet_cost - 18.0).abs() < 1e-9);
+
+        // Asymmetric input/output to catch a swapped-column regression that
+        // symmetric 1M/1M totals would silently tolerate (15+75 == 75+15).
+        let opus_input_only = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 0);
+        assert!((opus_input_only - 15.0).abs() < 1e-9);
+        let opus_output_only = calculator.calculate_cost("claude-opus-4-7", 0, 1_000_000);
+        assert!((opus_output_only - 75.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_unknown_model_falls_back_to_default_pricing() {
+        // Pins the $2/$6 default math so refactors can't silently drift cost
+        // reports for unknown models, and asserts the COST_UNKNOWN_MODEL counter
+        // fires so ops alerting stays load-bearing across refactors.
+        let calculator = CostCalculator::new();
+        let before = COST_UNKNOWN_MODEL.get();
+        let cost = calculator.calculate_cost("definitely-not-a-real-model", 1_000_000, 1_000_000);
+        let after = COST_UNKNOWN_MODEL.get();
+        assert!((cost - 8.0).abs() < 1e-9);
+        assert!(
+            after >= before + 1.0,
+            "COST_UNKNOWN_MODEL counter did not increment on unknown model"
+        );
+    }
+
+    #[test]
+    fn test_supported_models_have_pricing() {
+        // Providers with pre-existing pricing gaps are excluded until the gap
+        // is closed. Each entry is double-checked: the inverse assertion below
+        // forces removal once pricing is added, so the allowlist cannot silently
+        // mask a *newly fixed* model.
+        const KNOWN_UNPRICED: &[(&str, &str)] = &[
+            ("anthropic", "claude-sonnet-4-20250514"),
+            ("anthropic", "claude-opus-4-20250514"),
+            ("anthropic", "claude-3-5-haiku-20241022"),
+            ("gemini", "gemini-3-pro-image-preview"),
+            ("gemini", "gemini-2.5-flash-image"),
+            ("gemini", "gemini-2.0-flash-lite"),
+            ("openai", "gpt-5"),
+            ("openai", "gpt-5-mini"),
+            ("openai", "gpt-5-nano"),
+            ("openai", "gpt-5-chat"),
+            ("openai", "gpt-4.1"),
+            ("openai", "gpt-4-turbo-preview"),
+            ("openai", "gpt-4-vision-preview"),
+            ("azure", "azure-gpt-4o"),
+            ("azure", "azure-gpt-4o-mini"),
+            ("azure", "azure-gpt-4-turbo"),
+            ("azure", "azure-gpt-4"),
+            ("azure", "azure-gpt-35-turbo"),
+        ];
+
+        let calculator = CostCalculator::new();
+        for provider in ["anthropic", "gemini", "openai", "azure"] {
+            for model in provider_config::get_supported_models(provider) {
+                if KNOWN_UNPRICED.contains(&(provider, model.as_str())) {
+                    continue;
+                }
+                assert!(
+                    calculator.get_model_pricing(&model).is_some(),
+                    "{provider} supported model {model} has no pricing entry in CostCalculator (remove from KNOWN_UNPRICED once pricing is added)"
+                );
+            }
+        }
+
+        // Inverse check: once pricing is added for an entry, the corresponding
+        // KNOWN_UNPRICED row must be removed — otherwise the exclusion list
+        // silently keeps masking a gap that's already been closed.
+        for (provider, model) in KNOWN_UNPRICED {
+            assert!(
+                calculator.get_model_pricing(model).is_none(),
+                "{provider} model {model} now has pricing — remove it from KNOWN_UNPRICED"
+            );
+        }
+    }
+
+    #[test]
     fn test_cheaper_alternative() {
         let calculator = CostCalculator::new();
 
         // Claude Opus is expensive, should suggest cheaper alternatives
         let alternative = calculator.suggest_cheaper_alternative("claude-3-opus-20240229");
         assert!(alternative.is_some());
-
-        // Gemini Flash is already cheap, might not have alternatives
-        let alternative = calculator.suggest_cheaper_alternative("gemini-1.5-flash");
-        // This might be None or a very cheap model
-        println!("Cheaper than Gemini Flash: {:?}", alternative);
     }
 }

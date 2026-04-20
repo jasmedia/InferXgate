@@ -11,29 +11,40 @@ pub mod anthropic {
     /// Display endpoint (without path)
     pub const ENDPOINT: &str = "https://api.anthropic.com";
 
-    /// Primary models used for routing (subset of all supported)
+    /// Primary models used for routing (subset of all supported).
+    /// Ordered by generation (newest first), then by capability tier within a
+    /// generation (Opus > Sonnet > Haiku).
     pub const PRIMARY_MODELS: &[&str] = &[
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
         "claude-opus-4-5-20251101",
         "claude-sonnet-4-5-20250929",
         "claude-haiku-4-5-20251001",
         "claude-3-haiku-20240307",
     ];
 
-    /// All supported Anthropic models
+    /// All supported Anthropic models.
+    ///
+    /// Model IDs are forwarded verbatim to Anthropic. Unsuffixed IDs (e.g.
+    /// `claude-opus-4-7`) rely on Anthropic's server-side alias resolution to
+    /// the latest dated release; dated IDs pin a specific version.
     pub const SUPPORTED_MODELS: &[&str] = &[
-        // Latest models (Claude 4.5)
-        "claude-opus-4-5-20251101",   // Latest Opus - Most capable
-        "claude-sonnet-4-5-20250929", // Latest Sonnet - Best balance
-        "claude-haiku-4-5-20251001",  // Latest Haiku - Fastest
-        // Claude 4.1 models
-        "claude-opus-4-1-20250805", // Opus 4.1
-        // Claude 4.0 models (First generation Claude 4)
-        "claude-sonnet-4-20250514", // Original Claude 4 Sonnet
-        "claude-opus-4-20250514",   // Original Claude 4 Opus
-        // Claude 3.5 models (Active)
-        "claude-3-5-haiku-20241022", // Claude 3.5 Haiku
-        // Claude 3 models (Legacy - only Haiku 3 still fully supported)
-        "claude-3-haiku-20240307", // Original Claude 3 Haiku
+        // Claude 4.x aliases (resolve to latest dated release)
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+        // Claude 4.5 Family
+        "claude-opus-4-5-20251101",
+        "claude-sonnet-4-5-20250929",
+        "claude-haiku-4-5-20251001",
+        // Claude 4.1
+        "claude-opus-4-1-20250805",
+        // Claude 4.0
+        "claude-sonnet-4-20250514",
+        "claude-opus-4-20250514",
+        // Claude 3.5
+        "claude-3-5-haiku-20241022",
+        // Claude 3 (Legacy)
+        "claude-3-haiku-20240307",
     ];
 }
 
@@ -193,5 +204,53 @@ pub fn get_endpoint(provider: &str) -> &'static str {
         "openai" => openai::ENDPOINT,
         "azure" => azure::ENDPOINT,
         _ => "",
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    const ALL_PROVIDERS: &[&str] = &["anthropic", "gemini", "openai", "azure"];
+
+    #[test]
+    fn primary_models_are_in_supported() {
+        for provider in ALL_PROVIDERS {
+            let primary = get_primary_models(provider);
+            let supported = get_supported_models(provider);
+            for model in primary {
+                assert!(
+                    supported.iter().any(|s| s == model),
+                    "{provider} PRIMARY model {model} is not in SUPPORTED_MODELS"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn supported_models_have_no_duplicates() {
+        for provider in ALL_PROVIDERS {
+            let supported = get_supported_models(provider);
+            let unique: HashSet<&String> = supported.iter().collect();
+            assert_eq!(
+                supported.len(),
+                unique.len(),
+                "{provider} SUPPORTED_MODELS contains duplicates: {supported:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn primary_models_have_no_duplicates() {
+        for provider in ALL_PROVIDERS {
+            let primary = get_primary_models(provider);
+            let unique: HashSet<&&str> = primary.iter().collect();
+            assert_eq!(
+                primary.len(),
+                unique.len(),
+                "{provider} PRIMARY_MODELS contains duplicates: {primary:?}"
+            );
+        }
     }
 }

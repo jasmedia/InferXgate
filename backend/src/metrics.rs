@@ -1,7 +1,7 @@
 use lazy_static::lazy_static;
 use prometheus::{
-    register_counter_vec, register_gauge_vec, register_histogram_vec, CounterVec, Encoder,
-    GaugeVec, HistogramVec, TextEncoder,
+    register_counter, register_counter_vec, register_gauge_vec, register_histogram_vec, Counter,
+    CounterVec, Encoder, GaugeVec, HistogramVec, TextEncoder,
 };
 
 lazy_static! {
@@ -76,6 +76,17 @@ lazy_static! {
         &["key_id", "limit_type"]
     )
     .unwrap();
+
+    // Drives the "missing pricing entry" alert — if this counter rises, at least
+    // one request was billed at default fallback rates instead of its true price.
+    // Intentionally unlabeled: the raw model string is caller-controlled, so
+    // putting it on a Prometheus label is an unbounded-cardinality trap. The
+    // model ID is captured in the paired warn! log instead.
+    pub static ref COST_UNKNOWN_MODEL: Counter = register_counter!(
+        "llm_gateway_cost_unknown_model_total",
+        "Cost calculations that fell back to default pricing due to an unknown model"
+    )
+    .unwrap();
 }
 
 pub struct MetricsCollector;
@@ -101,6 +112,10 @@ impl MetricsCollector {
         COST_COUNTER
             .with_label_values(&[model, provider])
             .inc_by(cost_usd);
+    }
+
+    pub fn record_cost_unknown_model() {
+        COST_UNKNOWN_MODEL.inc();
     }
 
     pub fn record_cache_hit() {
