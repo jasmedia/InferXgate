@@ -4,7 +4,15 @@ use tracing::warn;
 use crate::metrics::MetricsCollector;
 
 /// Cost calculator for different LLM models.
-/// Prices are per 1M tokens; see each entry's Source comment for verification dates.
+///
+/// Prices are USD per 1M tokens. Every model `llm-prices` covers is priced from that crate's
+/// dated, source-cited table (each row carries the provider pricing URL and the date it was
+/// checked), so a price change is a `cargo update` instead of a hand edit here. The crate also
+/// resolves dated snapshots, `-latest` ids and provider prefixes (`anthropic/`, `models/`,
+/// Bedrock and Vertex ids), so those no longer fall through to the flat default.
+///
+/// `LEGACY_PRICING` only holds ids the crate does not carry (older models still accepted by
+/// the gateway).
 pub struct CostCalculator {
     pricing: HashMap<String, ModelPricing>,
 }
@@ -15,150 +23,76 @@ pub struct ModelPricing {
     pub output_price_per_million: f64,
 }
 
+/// Models `llm-prices` 1.8 has no row for: (model, input, output), USD per 1M tokens.
+const LEGACY_PRICING: &[(&str, f64, f64)] = &[
+    ("claude-3-opus-20240229", 15.0, 75.0),
+    ("claude-3-sonnet-20240229", 3.0, 15.0),
+    ("claude-3-haiku-20240307", 0.25, 1.25),
+    ("claude-3-5-sonnet-20241022", 3.0, 15.0),
+    // Preview pricing for prompts up to 200K tokens.
+    ("gemini-3-pro-preview", 2.0, 12.0),
+    ("gemini-2.0-flash", 0.1, 0.4),
+    ("gpt-4", 30.0, 60.0),
+];
+
+/// Looks `model` up in the `llm-prices` table. Rows without both an input and an output price
+/// (embedding models) are skipped.
+fn lookup_listed(model: &str) -> Option<ModelPricing> {
+    let price = llm_prices::lookup(model)?;
+    Some(ModelPricing {
+        input_price_per_million: price.input?,
+        output_price_per_million: price.output?,
+    })
+}
+
 impl CostCalculator {
     pub fn new() -> Self {
         let mut pricing = HashMap::new();
+        for &(model, input, output) in LEGACY_PRICING {
+            pricing.insert(
+                model.to_string(),
+                ModelPricing {
+                    input_price_per_million: input,
+                    output_price_per_million: output,
+                },
+            );
+        }
 
-        // Anthropic Claude pricing (per 1M tokens).
-        // The two entries below (claude-opus-4-7, claude-sonnet-4-6) verified
-        // 2026-04-19 against https://www.anthropic.com/pricing; earlier entries
-        // dated at their original insertion.
-        pricing.insert(
-            "claude-opus-4-7".to_string(),
-            ModelPricing {
-                input_price_per_million: 15.0,
-                output_price_per_million: 75.0,
-            },
-        );
-        pricing.insert(
-            "claude-sonnet-4-6".to_string(),
-            ModelPricing {
-                input_price_per_million: 3.0,
-                output_price_per_million: 15.0,
-            },
-        );
-        pricing.insert(
-            "claude-opus-4-5-20251101".to_string(),
-            ModelPricing {
-                input_price_per_million: 15.0,
-                output_price_per_million: 75.0,
-            },
-        );
-        pricing.insert(
-            "claude-sonnet-4-5-20250929".to_string(),
-            ModelPricing {
-                input_price_per_million: 3.0,
-                output_price_per_million: 15.0,
-            },
-        );
-        pricing.insert(
-            "claude-haiku-4-5-20251001".to_string(),
-            ModelPricing {
-                input_price_per_million: 0.8,
-                output_price_per_million: 4.0,
-            },
-        );
-        pricing.insert(
-            "claude-opus-4-1-20250805".to_string(),
-            ModelPricing {
-                input_price_per_million: 15.0,
-                output_price_per_million: 75.0,
-            },
-        );
-        pricing.insert(
-            "claude-3-opus-20240229".to_string(),
-            ModelPricing {
-                input_price_per_million: 15.0,
-                output_price_per_million: 75.0,
-            },
-        );
-        pricing.insert(
-            "claude-3-sonnet-20240229".to_string(),
-            ModelPricing {
-                input_price_per_million: 3.0,
-                output_price_per_million: 15.0,
-            },
-        );
-        pricing.insert(
-            "claude-3-haiku-20240307".to_string(),
-            ModelPricing {
-                input_price_per_million: 0.25,
-                output_price_per_million: 1.25,
-            },
-        );
-        pricing.insert(
-            "claude-3-5-sonnet-20241022".to_string(),
-            ModelPricing {
-                input_price_per_million: 3.0,
-                output_price_per_million: 15.0,
-            },
-        );
-
-        // Google Gemini pricing (per 1M tokens)
-        pricing.insert(
-            "gemini-3-pro-preview".to_string(),
-            ModelPricing {
-                input_price_per_million: 1.25,
-                output_price_per_million: 5.0,
-            },
-        );
-        pricing.insert(
-            "gemini-2.5-pro".to_string(),
-            ModelPricing {
-                input_price_per_million: 1.25,
-                output_price_per_million: 5.0,
-            },
-        );
-        pricing.insert(
-            "gemini-2.5-flash".to_string(),
-            ModelPricing {
-                input_price_per_million: 0.075,
-                output_price_per_million: 0.3,
-            },
-        );
-        pricing.insert(
-            "gemini-2.5-flash-lite".to_string(),
-            ModelPricing {
-                input_price_per_million: 0.075,
-                output_price_per_million: 0.3,
-            },
-        );
-        pricing.insert(
-            "gemini-2.0-flash".to_string(),
-            ModelPricing {
-                input_price_per_million: 0.1,
-                output_price_per_million: 0.4,
-            },
-        );
-
-        // OpenAI pricing (per 1M tokens)
-        pricing.insert(
-            "gpt-4".to_string(),
-            ModelPricing {
-                input_price_per_million: 30.0,
-                output_price_per_million: 60.0,
-            },
-        );
-        pricing.insert(
-            "gpt-4-turbo".to_string(),
-            ModelPricing {
-                input_price_per_million: 10.0,
-                output_price_per_million: 30.0,
-            },
-        );
-        pricing.insert(
-            "gpt-3.5-turbo".to_string(),
-            ModelPricing {
-                input_price_per_million: 0.5,
-                output_price_per_million: 1.5,
-            },
-        );
-
+        // Pre-resolve every model the gateway routes so suggest_cheaper_alternative() can
+        // compare across them. Anything else is still resolved per request in lookup().
+        let calculator = Self { pricing };
+        let mut resolved = HashMap::new();
+        for provider in ["anthropic", "gemini", "openai", "azure"] {
+            for model in crate::provider_config::get_supported_models(provider) {
+                if let Some(p) = calculator.lookup(&model) {
+                    resolved.insert(model, p);
+                }
+            }
+        }
+        let mut pricing = calculator.pricing;
+        pricing.extend(resolved);
         Self { pricing }
     }
 
+    /// Resolves a model id: the table built in `new()`, then `llm-prices` (dated snapshots,
+    /// aliases and provider prefixes), then Azure deployment names (`azure-gpt-4o`,
+    /// `azure-gpt-35-turbo`) priced as the OpenAI model they deploy.
+    fn lookup(&self, model: &str) -> Option<ModelPricing> {
+        if let Some(p) = self.pricing.get(model) {
+            return Some(p.clone());
+        }
+        if let Some(p) = lookup_listed(model) {
+            return Some(p);
+        }
+        let deployed = model.strip_prefix("azure-")?.replace("gpt-35", "gpt-3.5");
+        self.pricing
+            .get(&deployed)
+            .cloned()
+            .or_else(|| lookup_listed(&deployed))
+    }
+
     pub fn calculate_cost(&self, model: &str, prompt_tokens: i32, completion_tokens: i32) -> f64 {
-        let pricing = match self.pricing.get(model) {
+        let pricing = match self.lookup(model) {
             Some(p) => p,
             None => {
                 MetricsCollector::record_cost_unknown_model();
@@ -166,7 +100,7 @@ impl CostCalculator {
                     model = %model,
                     prompt_tokens,
                     completion_tokens,
-                    "No pricing entry for model; falling back to default. Billing will be inaccurate. If this model should be supported, add it to CostCalculator::new(); otherwise verify the caller is sending a valid model ID."
+                    "No pricing entry for model; falling back to default. Billing will be inaccurate. If this model should be supported, add it to LEGACY_PRICING in cost.rs or update llm-prices; otherwise verify the caller is sending a valid model ID."
                 );
                 return self.calculate_default_cost(prompt_tokens, completion_tokens);
             }
@@ -186,12 +120,12 @@ impl CostCalculator {
         input_cost + output_cost
     }
 
-    pub fn get_model_pricing(&self, model: &str) -> Option<&ModelPricing> {
-        self.pricing.get(model)
+    pub fn get_model_pricing(&self, model: &str) -> Option<ModelPricing> {
+        self.lookup(model)
     }
 
     pub fn suggest_cheaper_alternative(&self, model: &str) -> Option<String> {
-        let current_pricing = self.pricing.get(model)?;
+        let current_pricing = self.lookup(model)?;
         let current_total_price =
             current_pricing.input_price_per_million + current_pricing.output_price_per_million;
 
@@ -246,9 +180,9 @@ mod tests {
         let expected_cost = (1000.0 / 1_000_000.0) * 3.0 + (500.0 / 1_000_000.0) * 15.0;
         assert!((cost - expected_cost).abs() < 0.00001);
 
-        // Test Gemini 2.5 Flash: $0.075/1M input, $0.3/1M output
+        // Test Gemini 2.5 Flash: $0.30/1M input, $2.50/1M output
         let cost = calculator.calculate_cost("gemini-2.5-flash", 10000, 5000);
-        let expected_cost = (10000.0 / 1_000_000.0) * 0.075 + (5000.0 / 1_000_000.0) * 0.3;
+        let expected_cost = (10000.0 / 1_000_000.0) * 0.30 + (5000.0 / 1_000_000.0) * 2.50;
         assert!((cost - expected_cost).abs() < 0.00001);
     }
 
@@ -259,8 +193,8 @@ mod tests {
         let opus_47 = calculator
             .get_model_pricing("claude-opus-4-7")
             .expect("claude-opus-4-7 must have pricing");
-        assert!((opus_47.input_price_per_million - 15.0).abs() < 1e-9);
-        assert!((opus_47.output_price_per_million - 75.0).abs() < 1e-9);
+        assert!((opus_47.input_price_per_million - 5.0).abs() < 1e-9);
+        assert!((opus_47.output_price_per_million - 25.0).abs() < 1e-9);
 
         let sonnet_46 = calculator
             .get_model_pricing("claude-sonnet-4-6")
@@ -271,16 +205,16 @@ mod tests {
         // Exercises the full calculate_cost path so a future refactor that
         // normalizes the lookup key is caught here, not in production billing.
         let opus_cost = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 1_000_000);
-        assert!((opus_cost - 90.0).abs() < 1e-9);
+        assert!((opus_cost - 30.0).abs() < 1e-9);
         let sonnet_cost = calculator.calculate_cost("claude-sonnet-4-6", 1_000_000, 1_000_000);
         assert!((sonnet_cost - 18.0).abs() < 1e-9);
 
         // Asymmetric input/output to catch a swapped-column regression that
-        // symmetric 1M/1M totals would silently tolerate (15+75 == 75+15).
+        // symmetric 1M/1M totals would silently tolerate (5+25 == 25+5).
         let opus_input_only = calculator.calculate_cost("claude-opus-4-7", 1_000_000, 0);
-        assert!((opus_input_only - 15.0).abs() < 1e-9);
+        assert!((opus_input_only - 5.0).abs() < 1e-9);
         let opus_output_only = calculator.calculate_cost("claude-opus-4-7", 0, 1_000_000);
-        assert!((opus_output_only - 75.0).abs() < 1e-9);
+        assert!((opus_output_only - 25.0).abs() < 1e-9);
     }
 
     #[test]
@@ -306,24 +240,12 @@ mod tests {
         // forces removal once pricing is added, so the allowlist cannot silently
         // mask a *newly fixed* model.
         const KNOWN_UNPRICED: &[(&str, &str)] = &[
-            ("anthropic", "claude-sonnet-4-20250514"),
-            ("anthropic", "claude-opus-4-20250514"),
-            ("anthropic", "claude-3-5-haiku-20241022"),
             ("gemini", "gemini-3-pro-image-preview"),
             ("gemini", "gemini-2.5-flash-image"),
             ("gemini", "gemini-2.0-flash-lite"),
-            ("openai", "gpt-5"),
-            ("openai", "gpt-5-mini"),
-            ("openai", "gpt-5-nano"),
             ("openai", "gpt-5-chat"),
-            ("openai", "gpt-4.1"),
             ("openai", "gpt-4-turbo-preview"),
             ("openai", "gpt-4-vision-preview"),
-            ("azure", "azure-gpt-4o"),
-            ("azure", "azure-gpt-4o-mini"),
-            ("azure", "azure-gpt-4-turbo"),
-            ("azure", "azure-gpt-4"),
-            ("azure", "azure-gpt-35-turbo"),
         ];
 
         let calculator = CostCalculator::new();
@@ -348,6 +270,59 @@ mod tests {
                 "{provider} model {model} now has pricing — remove it from KNOWN_UNPRICED"
             );
         }
+    }
+
+    #[test]
+    fn test_list_prices_from_llm_prices() {
+        // These rows were hand-typed before and had drifted from the providers' pricing
+        // pages: opus-4-7 was billed at 15/75, haiku-4-5 at 0.8/4, gemini-2.5-pro output
+        // at 5, gemini-2.5-flash at 0.075/0.3 and gemini-2.5-flash-lite at 0.075/0.3.
+        let calculator = CostCalculator::new();
+        let cases: &[(&str, f64, f64)] = &[
+            ("claude-opus-4-7", 5.0, 25.0),
+            ("claude-opus-4-5-20251101", 5.0, 25.0),
+            ("claude-haiku-4-5-20251001", 1.0, 5.0),
+            ("gemini-2.5-pro", 1.25, 10.0),
+            ("gemini-2.5-flash", 0.30, 2.50),
+            ("gemini-2.5-flash-lite", 0.10, 0.40),
+            // Previously unpriced, billed at the flat $2/$6 default.
+            ("claude-sonnet-4-20250514", 3.0, 15.0),
+            ("gpt-5", 1.25, 10.0),
+            ("gpt-4o-mini", 0.15, 0.60),
+            ("azure-gpt-4o", 2.5, 10.0),
+            ("azure-gpt-35-turbo", 0.5, 1.5),
+            ("azure-gpt-4", 30.0, 60.0),
+        ];
+        for &(model, input, output) in cases {
+            let p = calculator
+                .get_model_pricing(model)
+                .unwrap_or_else(|| panic!("{model} must have pricing"));
+            assert!(
+                (p.input_price_per_million - input).abs() < 1e-9
+                    && (p.output_price_per_million - output).abs() < 1e-9,
+                "{model}: got {}/{}, want {input}/{output}",
+                p.input_price_per_million,
+                p.output_price_per_million
+            );
+        }
+    }
+
+    #[test]
+    fn test_snapshot_and_prefixed_ids_do_not_hit_default() {
+        // Ids that are not exact keys used to fall to the $2/$6 default and bump
+        // COST_UNKNOWN_MODEL. They now resolve to the model's list price.
+        let calculator = CostCalculator::new();
+        let sonnet = 1_000_000.0 * 3.0 / 1_000_000.0 + 1_000_000.0 * 15.0 / 1_000_000.0;
+        for id in [
+            "claude-sonnet-4-5",
+            "anthropic/claude-sonnet-4-6",
+            "CLAUDE-SONNET-4-6",
+        ] {
+            let cost = calculator.calculate_cost(id, 1_000_000, 1_000_000);
+            assert!((cost - sonnet).abs() < 1e-9, "{id}: got {cost}");
+        }
+        let flash = calculator.calculate_cost("models/gemini-2.5-flash", 1_000_000, 1_000_000);
+        assert!((flash - 2.80).abs() < 1e-9, "got {flash}");
     }
 
     #[test]
